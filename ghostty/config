@@ -1,6 +1,8 @@
+#shell
+shell-integration = zsh
 
 #theme
-theme = catppuccin-macchiato
+theme = rose-pine-moon 
 
 
 #window
@@ -12,3 +14,11 @@ window-padding-y = 20
 #keybinds
 
 keybind = ctrl+shift>r=reload_config
+
+
+#fonts
+font-family = "JetBrains Mono Nerd Font"
+font-size = 14
+
+#background
+background-opacity = 0.5
