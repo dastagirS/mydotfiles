@@ -7,6 +7,7 @@ This repository contains my personal configuration files for various tools.
 - **Operating System**: Arch Linux
 - **Window Manager**: Hyprland
 - **Text Editor**: Neovim
+- **Shell**: zsh (oh-my-zsh)
 - **Terminal Emulator**: Ghostty (currently), Kitty
 - **Keyboard**: 42 Keys Corne Split Keyboard
 
