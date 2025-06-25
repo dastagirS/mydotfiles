@@ -1,0 +1,26 @@
+#shell
+shell-integration = zsh
+
+#theme
+theme = rose-pine-moon 
+
+
+#window
+window-decoration = false
+window-padding-x = 20
+window-padding-y = 20
+
+
+#keybinds
+keybind = ctrl+shift>r=reload_config
+
+
+#fonts
+font-family = "Share Tech Mono"
+font-size = 14
+
+#background
+background-opacity = 0.8
+
+#cursor
+cursor-style = block
