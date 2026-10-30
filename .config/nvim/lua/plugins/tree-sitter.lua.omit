@@ -1,0 +1,34 @@
+return {
+	{
+		"nvim-treesitter/nvim-treesitter",
+		build = ":TSUpdate",
+		config = function()
+			local config = require("nvim-treesitter.configs")
+			config.setup({
+				auto_install = true,
+				ensure_installed = {
+					"lua",
+					"go",
+					"python",
+					"javascript",
+					"typescript",
+					"tsx",
+					"html",
+					"css",
+					"json",
+					"yaml",
+					"toml",
+					"rust",
+					"dart",
+					"bash",
+					"markdown",
+					"markdown_inline",
+					"vim",
+					"vimdoc",
+				},
+				highlight = { enable = true, disable = { "markdown", "markdown_inline" } },
+				indent = { enable = true },
+			})
+		end,
+	},
+}

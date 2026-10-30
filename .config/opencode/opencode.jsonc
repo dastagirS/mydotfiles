@@ -1,0 +1,111 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+"plugin": [
+    ["@plannotator/opencode@latest", {
+      "workflow": "all-agents"
+    }]
+  ],
+"permission": {
+    "external_directory": {
+      "*": "allow",
+      "**/.ssh/**": "deny",
+      "**/.aws/**": "deny",
+      "~/.local/share/opencode/mcp-auth.json": "deny"
+    },
+  "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.envrc": "deny",
+      "**/.env": "deny",
+      "**/.env.*": "deny",
+      "**/.envrc": "deny",
+      ".dev.vars": "deny",
+      "**/.dev.vars": "deny",
+      "secrets/*": "deny",
+      "**/secrets/**": "deny",
+      "*.pem": "deny",
+      "*.key": "deny",
+      "**/.aws/**": "deny",
+      "**/.ssh/**": "deny",
+      "~/.local/share/opencode/mcp-auth.json": "deny"
+    },
+    "bash": {
+      "*": "allow",
+      "printenv *": "deny",
+      "printenv": "deny",
+      "env": "deny",
+      "env *": "deny",
+      "export *": "deny",
+      "gh auth *": "deny",
+      // block any command touching .env files
+      "* *.env": "deny",
+      "* *.env.*": "deny",
+      "* **/.env": "deny",
+      "* **/.env.*": "deny",
+      "* *.envrc": "deny",
+      "* **/.envrc": "deny",
+      "* .dev.vars": "deny",
+      "* **/.dev.vars": "deny",
+      "* *.pem": "deny",
+      "* *.key": "deny",
+      "* **/.aws/**": "deny",
+      "* **/.ssh/**": "deny",
+      "* **/secrets/**": "deny"
+    },
+    "edit": "allow",
+    "webfetch": "allow",
+    "glob": {
+      "*": "allow",
+      ".*env*": "deny",
+      "**/.*env*": "deny",
+      "*.env*": "deny",
+      "**/*.env*": "deny",
+      "secrets/**": "deny",
+      "**/secrets/**": "deny",
+      "*.pem": "deny",
+      "*.key": "deny",
+      "**/.aws/**": "deny",
+      "**/.ssh/**": "deny"
+    },
+    "grep": "allow",
+    "list": "allow",
+    "lsp": "allow",
+    "todoread": "allow",
+    "todowrite": "allow",
+    "question": "allow",
+    "task": "allow",
+    "skill": "allow",
+    "websearch": "allow",
+    "codesearch": "allow"
+  },
+  "provider": {
+    "lumyx-ai": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Anomaly (IN)",
+      "options": {
+        "baseURL": "https://lumyx-ai.site/api/v1"
+      },
+      "models": {
+        "chatgpt_5.5_free": {
+          "name": "GPT-5.5",
+          "variants": {
+            "none":    { "reasoningEffort": "none",    "textVerbosity": "auto" },
+            "minimal": { "reasoningEffort": "minimal", "textVerbosity": "auto" },
+            "low":     { "reasoningEffort": "low",     "textVerbosity": "auto" },
+            "medium":  { "reasoningEffort": "medium",  "textVerbosity": "auto" },
+            "high":    { "reasoningEffort": "high",    "textVerbosity": "auto" },
+            "xhigh":   { "reasoningEffort": "xhigh",   "textVerbosity": "auto" }
+          }
+        }
+      }
+    }
+  },
+  "mcp": {
+    "jira": {
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v1/mcp",
+      "enabled": true
+    }
+  }
+}

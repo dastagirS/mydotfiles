@@ -1,0 +1,39 @@
+-- Change this to swap themes:
+--   "kanagawa-dragon"   | "kanagawa-wave"    | "kanagawa-lotus"
+--   "rose-pine-moon"    | "rose-pine"        | "rose-pine-dawn"
+--   "catppuccin-mocha"  | "catppuccin-latte" | "catppuccin-frappe" | "catppuccin-macchiato"
+--   "tokyonight-night"  | "tokyonight-storm" | "tokyonight-day"    | "tokyonight-moon"
+local active = "kanagawa-dragon"
+
+-- Map colorscheme names to their plugin spec and setup module
+local themes = {
+	["kanagawa"] = { plugin = "rebelot/kanagawa.nvim", mod = "kanagawa" },
+	["rose-pine"] = { plugin = "rose-pine/neovim", mod = "rose-pine" },
+	["catppuccin"] = { plugin = "catppuccin/nvim", mod = "catppuccin" },
+	["tokyonight"] = { plugin = "folke/tokyonight.nvim", mod = "tokyonight" },
+}
+
+-- Resolve which theme entry owns the active colorscheme
+local function get_theme()
+	for prefix, entry in pairs(themes) do
+		if active:find(prefix, 1, true) then
+			return entry
+		end
+	end
+	return nil
+end
+
+local theme = get_theme()
+
+return {
+	theme.plugin,
+	lazy = false,
+	priority = 1000,
+	config = function(_, opts)
+		require(theme.mod).setup(opts)
+		vim.cmd.colorscheme(active)
+		vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
+		vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
+		vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" })
+	end,
+}

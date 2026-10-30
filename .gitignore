@@ -1,0 +1,53 @@
+# Keep home-directory files private unless explicitly allowlisted.
+/*
+!/.gitignore
+
+!/.config/
+/.config/*
+!/.config/ghostty/
+!/.config/kitty/
+!/.config/nvim/
+!/.config/opencode/
+!/.config/starship.toml
+
+# Flagged by the secret-pattern scan; keep private pending manual review.
+/.config/opencode/service.json
+/.pi/agent/extensions/message-board/integration.test.mjs
+
+# Pi runtime and connection settings may contain credentials or private history.
+!/.pi/
+/.pi/*
+!/.pi/AGENTS.md
+!/.pi/docs/
+!/.pi/agent/
+/.pi/agent/*
+!/.pi/agent/AGENTS.md
+!/.pi/agent/SYSTEM.md
+!/.pi/agent/extensions/
+!/.pi/agent/prompts/
+!/.pi/agent/skills/
+!/.pi/agent/themes/
+
+# Apply these exclusions within every allowlisted directory too.
+**/node_modules/
+**/.git/
+**/.opencode/
+**/.env
+**/.env.*
+**/*auth*
+**/*credential*
+**/*secret*
+**/*token*
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/id_rsa*
+**/id_ed25519*
+**/*.bak
+**/*.log
+**/*.sqlite*
+**/*.db
+**/__pycache__/
+**/.cache/
+**/tmp/
