@@ -1,0 +1,131 @@
+{
+  "origin": "User-provided local dashboard visual references; creator/usage rights and runtime behavior unverified. No upload or redistribution authorized.",
+  "images": [
+    {
+      "source": "/tmp/pi-clipboard-a357d67f-d034-494f-8827-dbf952befa42.png",
+      "file": "01-light-analytics-workspace.png",
+      "title": "Light analytics workspace",
+      "sha256": "cc5ec5b9e0bcf5be40ec3a465c7c17f1e7d98a84165692c53b2c4008ef52d160",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 421323
+    },
+    {
+      "source": "/tmp/pi-clipboard-ad480644-428b-4021-a9e3-26172a5a188c.png",
+      "file": "02-freelance-income-workspace.png",
+      "title": "Freelance income workspace",
+      "sha256": "905c57d8f1cf4a9c3182048f34a27472ee83711a1a6516e02644cb2576de61f3",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 710021
+    },
+    {
+      "source": "/tmp/pi-clipboard-cec02dfe-2dc1-4e75-81ea-697608268cdb.png",
+      "file": "03-project-operations-dashboard.png",
+      "title": "Project operations dashboard",
+      "sha256": "46a4b8fcb834f35a9981ea7980f8aa9a641325191fbfffc6bba1c51894f9f806",
+      "width": 1024,
+      "height": 842,
+      "bytes": 564725
+    },
+    {
+      "source": "/tmp/pi-clipboard-0e2a6a9c-d374-415b-a590-8e3029706ded.png",
+      "file": "04-light-admin-dashboard.png",
+      "title": "Light admin dashboard",
+      "sha256": "eefccf59d7888c2907994ac1e9d231abe235771e33150d1a17d53c4d7b8c6e44",
+      "width": 800,
+      "height": 600,
+      "bytes": 424895
+    },
+    {
+      "source": "/tmp/pi-clipboard-b7406701-2589-4402-8ba6-555e4c50ed54.png",
+      "file": "05-logistics-overview.png",
+      "title": "Logistics overview",
+      "sha256": "0b8dd8486cd93782e4c3a9e68eb198e030ae18344ff2d96449189b87d40d3d5b",
+      "width": 530,
+      "height": 377,
+      "bytes": 56476
+    },
+    {
+      "source": "/tmp/pi-clipboard-3b1ebaf8-f604-4d18-9339-30368c2bff75.png",
+      "file": "06-layered-purple-analytics.png",
+      "title": "Layered purple analytics concept",
+      "sha256": "0cce8799b446d22edd8e0e619cbe1e6e0cec4276f5b00916abee351a0c13a490",
+      "width": 1400,
+      "height": 1400,
+      "bytes": 2238918
+    },
+    {
+      "source": "/tmp/pi-clipboard-361aa7ce-ab4d-47fe-8786-3e4444c1fd3f.png",
+      "file": "07-healthcare-operations.png",
+      "title": "Healthcare operations",
+      "sha256": "baa153a7e526142fc6563b7a078a03e4e670883ef2c73a2b5d51dd8b5cd33b36",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 271763
+    },
+    {
+      "source": "/tmp/pi-clipboard-165d291a-ad66-4453-9916-dc8c68857119.png",
+      "file": "08-finance-health-overview.png",
+      "title": "Finance health overview",
+      "sha256": "77585d1cdf02b35f7f10d67617db0069f51a285a4cd23e6d96791652d42de5de",
+      "width": 400,
+      "height": 300,
+      "bytes": 82373
+    },
+    {
+      "source": "/tmp/pi-clipboard-673fc791-9f91-4ce3-a5e0-51d758425087.png",
+      "file": "09-modular-finance-workspace.png",
+      "title": "Modular finance workspace",
+      "sha256": "8126818f1af522b9957f8f00e282c8cf60223c948d40cdc4c9769c5e9f79b09e",
+      "width": 1024,
+      "height": 768,
+      "bytes": 275619
+    },
+    {
+      "source": "/tmp/pi-clipboard-816dea87-ada0-42b5-9b7c-2ba5b20fce55.png",
+      "file": "10-dark-finance-overview.png",
+      "title": "Dark finance overview",
+      "sha256": "9512183dbddf3e81d5551d830e01957aaa480ff91e15dfe01e4cc9f39078a051",
+      "width": 1024,
+      "height": 768,
+      "bytes": 418845
+    },
+    {
+      "source": "/tmp/pi-clipboard-ce3f5425-c2c7-4e55-81d1-4ad09707b32b.png",
+      "file": "11-finance-balance-and-goals.png",
+      "title": "Finance balance and goals",
+      "sha256": "3cd4f18bfd22d38889c8d16f1ac772c6f2fe7ff6a6a666d9a2dfec6e59255ccf",
+      "width": 1024,
+      "height": 768,
+      "bytes": 353222
+    },
+    {
+      "source": "/tmp/pi-clipboard-e8e5030a-dd61-4062-8f7a-26a45af327cb.png",
+      "file": "12-analytics-component-grid.png",
+      "title": "Analytics component grid",
+      "sha256": "8939f9d03754608e6bc4f4907127895d471822aa75cf27564b0bb2ab41f2e1ff",
+      "width": 600,
+      "height": 388,
+      "bytes": 189097
+    },
+    {
+      "source": "/tmp/pi-clipboard-56da6090-3403-4bbc-811b-0edd61aea5de.png",
+      "file": "13-chart-card-catalog.png",
+      "title": "Chart card catalog",
+      "sha256": "3992a31a28450a7fae60d5f91a93e5e537686ecb91d7f87d7ed6a7721acb7547",
+      "width": 433,
+      "height": 288,
+      "bytes": 119985
+    },
+    {
+      "source": "/tmp/pi-clipboard-b36ef7ad-5a55-4cb9-b919-481092204b21.png",
+      "file": "14-chart-variation-catalog.png",
+      "title": "Chart variation catalog",
+      "sha256": "066e91fd429d9c15c58ca2d0b20ad4258692159344b471a3589f0ddb608a1638",
+      "width": 580,
+      "height": 387,
+      "bytes": 216150
+    }
+  ]
+}
