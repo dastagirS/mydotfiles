@@ -1,14 +1,11 @@
 ---
 name: ponytail-review
-description: >
-  Code review focused exclusively on over-engineering. Finds what to delete:
-  reinvented standard library, unneeded dependencies, speculative abstractions,
-  dead flexibility. One line per finding: location, what to cut, what replaces
-  it. Use when the user says "review for over-engineering", "what can we
-  delete", "is this over-engineered", "simplify review", or invokes
-  /ponytail-review. Complements correctness-focused review, this one only
-  hunts complexity.
+description: Compatibility skill for the existing over-engineering review command. Uses the current Pi complexity-review guidance; does not delegate review or replace correctness checks.
 ---
+
+# Over-Engineering Review
+
+Required reference for the code-review skill's complexity pass. Formerly the standalone ponytail-review skill. Apply only to the changes under review; read existing code for context, not additional findings.
 
 Review diffs for unnecessary complexity. One line per finding: location, what
 to cut, what replaces it. The diff's best outcome is getting shorter.
@@ -43,14 +40,12 @@ considered whether all these validation rules are needed at this stage?"
 
 ## Scoring
 
-End with the only metric that matters: `net: -<N> lines possible.`
+When concrete proposed cuts support a line-count estimate, end the complexity section with `net: -<N> lines possible.` Do not invent an estimate or treat line count as the correctness review's metric.
 
-If there is nothing to cut, say `Lean already. Ship.` and stop.
+If there is nothing to cut, say `Lean already.` Finish the correctness and quality review too; this reference alone does not justify shipping.
 
 ## Boundaries
 
-Complexity only, correctness bugs, security holes, and performance go to a
-normal review pass, not this one. A single smoke test or `assert`-based
-self-check is the ponytail minimum, not bloat, never flag it for deletion.
-Does not apply the fixes, only lists them.
-"stop ponytail-review" or "normal mode": revert to verbose review style.
+Complexity only: correctness bugs, security holes, and performance belong in the main review's Correctness and Quality section, not this section. Necessary smoke tests and meaningful test assertions are not bloat; do not recommend deleting them to reduce line count. Follow the project's assertion policy: temporary development assertions should not leak into production, but necessary runtime validation and error handling must remain.
+
+Review only the changes. Do not recommend deleting unrelated existing code. List proposed cuts without applying them.

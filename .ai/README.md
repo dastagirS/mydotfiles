@@ -1,0 +1,46 @@
+# Shared Pi / OpenCode configuration
+
+Canonical shared rules and portable skills live directly in `/home/ichigo/.ai/shared/`. No dotfiles repository or background synchronizer is required.
+
+## Edit here
+
+| Source | Purpose |
+| --- | --- |
+| `shared/AGENTS.md` | Common safety, coding, testing, commit-review and communication rules |
+| `shared/skills/<directory>/` | One copy of each portable skill, including all original resources |
+| `pi/AGENTS.md` | Pi workspace-specific paths and instructions |
+| `opencode/AGENTS.md` | OpenCode-specific tool syntax and runtime restrictions |
+
+After changing instruction sources:
+
+```sh
+python3 /home/ichigo/.ai/build.py
+python3 /home/ichigo/.ai/build.py --check
+```
+
+The builder generates these files; do not edit them directly:
+
+- `~/.pi/agent/SYSTEM.md`: shared rules, using Pi's existing global system-prompt hook.
+- `~/.pi/AGENTS.md`: Pi workspace instructions only.
+- `~/.config/opencode/AGENTS.md`: OpenCode-specific instructions plus shared rules.
+
+Shared rules therefore apply globally in Pi, not just while working inside `~/.pi`. Do not add a second global Pi `AGENTS.md` containing the same rules. The existing system-prompt override remains an override; this migration does not change how Pi chooses its prompt.
+
+The builder validates all sources before writing, caps text at 128 KiB per file, preserves existing output permissions, skips unchanged files, writes each replacement atomically, and attempts rollback if a write fails. Concurrent builds fail immediately instead of waiting. Atomic replacement is per file, not an atomic multi-file transaction; rollback failures are explicitly reported. Initial originals remain under `backups/shared-*/`.
+
+## Skills
+
+Both clients retain their existing skill paths, now symlinked to `shared/skills/`. Edit the shared original. Skill descriptions already loaded into a client may require a manual reload or new session. No reload, provider call or worker action runs automatically.
+
+Docket/subagent stay Pi-only. OpenCode's existing `ponytail-review` compatibility skill remains OpenCode-only. Commands, reference prompts, disabled custom agents, providers, permissions, packages, credentials and runtime data are not shared or changed.
+
+To add a portable skill, create its complete directory under `shared/skills/`, then link that directory into both clients' existing `skills/` folders. Use the same directory ID in both clients; OpenCode skill IDs and Pi display names/tool syntax are not interchangeable. Do not put a Pi-specific protocol in shared discovery merely because its Markdown is readable elsewhere.
+
+## Verify
+
+```sh
+python3 -m unittest discover -s /home/ichigo/.ai -p 'test_*.py' -v
+python3 /home/ichigo/.ai/build.py --check
+```
+
+Builder tests use disposable homes and cover composition, read-only checks, shared edits, invalid inputs, target symlinks, idempotence, atomic-write cleanup and write-failure rollback. Setup tests inspect the installed links, generated output, Pi-only exclusions and original dashboard assets. Migration evidence, original hashes/modes and detailed diffs are retained with the initial backup. These checks are not model/provider or universal-client compatibility certification.

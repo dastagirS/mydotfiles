@@ -2,6 +2,17 @@
 /*
 !/.gitignore
 
+# Track shared configuration sources, not migration backups or runtime files.
+!/.ai/
+/.ai/*
+!/.ai/README.md
+!/.ai/build.py
+!/.ai/test_build.py
+!/.ai/test_setup.py
+!/.ai/shared/
+!/.ai/pi/
+!/.ai/opencode/
+
 !/.config/
 /.config/*
 !/.config/ghostty/
@@ -51,3 +62,7 @@
 **/__pycache__/
 **/.cache/
 **/tmp/
+
+# Reviewed instructional resources, not saved authentication state.
+!/.ai/shared/skills/agent-browser/references/authentication.md
+!/.ai/shared/skills/agent-browser/templates/authenticated-session.sh
