@@ -1,0 +1,15 @@
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+const packageRoot=process.env.PI_PACKAGE_ROOT??join(homedir(),'.local/lib/node_modules/@earendil-works/pi-coding-agent');
+const terminalModulePath=join(packageRoot,'node_modules/@earendil-works/pi-tui/dist/index.js');
+const {createJiti}=await import(pathToFileURL(join(packageRoot,'node_modules/jiti/lib/jiti.mjs')).href);
+const loader=createJiti(import.meta.url,{alias:{'@earendil-works/pi-tui':terminalModulePath,'@earendil-works/pi-coding-agent':join(packageRoot,'dist/index.js')}});
+export const {ReplyNavigator}=await loader.import(new URL('./view.ts',import.meta.url).pathname);
+export const {Container,Text,TuiAltScreen,TuiMainScreen,StdinBuffer,stripTerminalSequences}=await import(pathToFileURL(terminalModulePath).href);
+export const {AssistantMessageComponent,getMarkdownTheme,initTheme}=await import(pathToFileURL(join(packageRoot,'dist/index.js')).href);
+export const themeModule=await import(pathToFileURL(join(packageRoot,'dist/modes/interactive/theme/theme.js')).href);
+export const {createChatViewport}=await import(pathToFileURL(join(packageRoot,'dist/modes/interactive/chat-viewport.js')).href);
+export const {createInteractiveTuiReference}=await import(pathToFileURL(join(packageRoot,'dist/modes/interactive/tui-renderer.js')).href);
+initTheme('dark');
+export const {default:parentReplies}=await loader.import(new URL('./index.ts',import.meta.url).pathname);
