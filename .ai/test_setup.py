@@ -26,6 +26,11 @@ class SharedSetupTests(unittest.TestCase):
                     self.assertTrue(link.is_symlink(), f"Missing shared link: {link}")
                     self.assertTrue(link.samefile(skill), f"Client uses a different skill copy: {link}")
 
+    def test_pi_workspace_uses_the_canonical_document(self):
+        workspace = CONFIGURATION_ROOT.parent / ".pi/AGENTS.md"
+        self.assertTrue(workspace.is_symlink())
+        self.assertTrue(workspace.samefile(CONFIGURATION_ROOT / "pi/AGENTS.md"))
+
     def test_generated_instruction_files_match_sources(self):
         for target, expected in BUILD.render_outputs(CONFIGURATION_ROOT):
             with self.subTest(target=str(target)):

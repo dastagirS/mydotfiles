@@ -54,6 +54,6 @@ Personal Pi coding agent configuration. Shared coding and communication rules ar
 ## Shared Configuration
 
 - Edit common rules in `/home/ichigo/.ai/shared/AGENTS.md`; portable skills live in `/home/ichigo/.ai/shared/skills/` and are symlinked into both clients.
-- Edit this workspace document in `/home/ichigo/.ai/pi/AGENTS.md`.
-- Run `python3 /home/ichigo/.ai/build.py` after instruction edits; `--check` detects stale generated files without rewriting them. Do not edit generated instruction files directly.
+- `~/.pi/AGENTS.md` is a symlink to this canonical workspace document, `/home/ichigo/.ai/pi/AGENTS.md`; edits need no rebuild.
+- Run `python3 /home/ichigo/.ai/build.py` after shared-rule or OpenCode instruction edits; `--check` detects stale generated files without rewriting them. Do not edit generated instruction files directly.
 - Docket/subagent remain Pi-only. Shared rules already load through Pi's existing `agent/SYSTEM.md`; do not duplicate them in a second global context file.

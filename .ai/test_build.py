@@ -18,6 +18,9 @@ class InstructionBuildTests(unittest.TestCase):
             directory = self.root / name
             directory.mkdir(parents=True)
             (directory / "AGENTS.md").write_text(content)
+        workspace = self.root.parent / ".pi/AGENTS.md"
+        workspace.parent.mkdir(parents=True)
+        workspace.symlink_to(self.root / "pi/AGENTS.md")
 
     def snapshot(self):
         return {target: (target.read_bytes(), target.stat().st_mode) for target, _ in BUILD.render_outputs(self.root)}
@@ -33,6 +36,19 @@ class InstructionBuildTests(unittest.TestCase):
         self.assertNotIn("Pi only", opencode)
         self.assertIn("Pi only", workspace)
         self.assertNotIn("## Common rules", workspace)
+
+    def test_pi_workspace_link_survives_build_and_reads_source_edits(self):
+        workspace = self.root.parent / ".pi/AGENTS.md"
+        source = self.root / "pi/AGENTS.md"
+        BUILD.build(self.root)
+        self.assertTrue(workspace.is_symlink())
+        self.assertTrue(workspace.samefile(source))
+        source.write_text("# Pi workspace\nUpdated without rebuilding.\n")
+        self.assertEqual(workspace.read_text(), source.read_text())
+        BUILD.build(self.root, check=True)
+        BUILD.build(self.root)
+        self.assertTrue(workspace.is_symlink())
+        self.assertTrue(workspace.samefile(source))
 
     def test_unchanged_build_and_check_do_not_rewrite_files(self):
         BUILD.build(self.root)
@@ -86,9 +102,8 @@ class InstructionBuildTests(unittest.TestCase):
         system.chmod(0o640)
         before = self.snapshot()
         (self.root / "shared/AGENTS.md").write_text("Changed common policy")
-        (self.root / "pi/AGENTS.md").write_text("Changed workspace")
         write_atomic = BUILD.write_atomic
-        target_failure = self.root.parent / ".pi/AGENTS.md"
+        target_failure = self.root.parent / ".config/opencode/AGENTS.md"
 
         def fail_second_target(target, content, mode):
             if target == target_failure:

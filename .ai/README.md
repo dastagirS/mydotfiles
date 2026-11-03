@@ -11,7 +11,7 @@ Canonical shared rules and portable skills live directly in `/home/ichigo/.ai/sh
 | `pi/AGENTS.md` | Pi workspace-specific paths and instructions |
 | `opencode/AGENTS.md` | OpenCode-specific tool syntax and runtime restrictions |
 
-After changing instruction sources:
+After changing shared rules or OpenCode-specific instructions:
 
 ```sh
 python3 /home/ichigo/.ai/build.py
@@ -21,12 +21,13 @@ python3 /home/ichigo/.ai/build.py --check
 The builder generates these files; do not edit them directly:
 
 - `~/.pi/agent/SYSTEM.md`: shared rules, using Pi's existing global system-prompt hook.
-- `~/.pi/AGENTS.md`: Pi workspace instructions only.
 - `~/.config/opencode/AGENTS.md`: OpenCode-specific instructions plus shared rules.
+
+`~/.pi/AGENTS.md` is a direct symlink to `~/.ai/pi/AGENTS.md`, not a generated copy. Editing that Pi workspace document needs no rebuild. The builder leaves this link alone; the setup tests verify it still points to the canonical source.
 
 Shared rules therefore apply globally in Pi, not just while working inside `~/.pi`. Do not add a second global Pi `AGENTS.md` containing the same rules. The existing system-prompt override remains an override; this migration does not change how Pi chooses its prompt.
 
-The builder validates all sources before writing, caps text at 128 KiB per file, preserves existing output permissions, skips unchanged files, writes each replacement atomically, and attempts rollback if a write fails. Concurrent builds fail immediately instead of waiting. Atomic replacement is per file, not an atomic multi-file transaction; rollback failures are explicitly reported. Initial originals remain under `backups/shared-*/`.
+The builder validates both generated files' sources before writing, caps text at 128 KiB per file, preserves existing output permissions, skips unchanged files, writes each replacement atomically, and attempts rollback if a write fails. Concurrent builds fail immediately instead of waiting. Atomic replacement is per file, not an atomic multi-file transaction; rollback failures are explicitly reported. Initial originals remain under `backups/shared-*/`.
 
 ## Skills
 
