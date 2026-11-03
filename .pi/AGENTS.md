@@ -1,1 +1,1 @@
-/home/ichigo/.ai/pi/AGENTS.md
+../.ai/pi/AGENTS.md

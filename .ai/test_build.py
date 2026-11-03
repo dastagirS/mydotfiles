@@ -1,4 +1,8 @@
 import importlib.util
+import os
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -13,7 +17,11 @@ class InstructionBuildTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="ai-build-test-")
         self.addCleanup(self.temporary.cleanup)
-        self.root = Path(self.temporary.name) / ".ai"
+        self.home = Path(self.temporary.name) / "home"
+        self.root = self.home / ".ai"
+        home_patch = mock.patch.object(BUILD.Path, "home", return_value=self.home)
+        self.home_lookup = home_patch.start()
+        self.addCleanup(home_patch.stop)
         for name, content in [("shared", "## Common rules\nReview before committing.\n"), ("pi", "# Pi workspace\nPi only.\n"), ("opencode", "# OpenCode runtime\nOpenCode only.\n")]:
             directory = self.root / name
             directory.mkdir(parents=True)
@@ -24,6 +32,19 @@ class InstructionBuildTests(unittest.TestCase):
 
     def snapshot(self):
         return {target: (target.read_bytes(), target.stat().st_mode) for target, _ in BUILD.render_outputs(self.root)}
+
+    def test_generated_headers_do_not_embed_the_source_location(self):
+        for target, content in BUILD.render_outputs(self.root):
+            self.assertNotIn(str(self.root).encode(), content)
+
+    def test_outputs_follow_home_not_the_source_parent(self):
+        other = Path(self.temporary.name) / "source-checkout/configuration"
+        for name in ["shared", "opencode"]:
+            (other / name).mkdir(parents=True)
+            (other / name / "AGENTS.md").write_bytes((self.root / name / "AGENTS.md").read_bytes())
+        with mock.patch.object(BUILD.Path, "home", return_value=self.root.parent):
+            targets = [target for target, _ in BUILD.render_outputs(other)]
+        self.assertEqual(targets, [self.root.parent / ".pi/agent/SYSTEM.md", self.root.parent / ".config/opencode/AGENTS.md"])
 
     def test_client_rules_are_composed_without_runtime_leakage(self):
         BUILD.build(self.root)
@@ -114,6 +135,92 @@ class InstructionBuildTests(unittest.TestCase):
             with self.assertRaisesRegex(OSError, "Injected"):
                 BUILD.build(self.root)
         self.assertEqual(self.snapshot(), before)
+
+    def add_shared_skill(self):
+        skill = self.root / "shared/skills/example"
+        skill.mkdir(parents=True)
+        (skill / "SKILL.md").write_text("Example skill")
+        return skill
+
+    def test_relative_links_survive_moving_the_home_directory(self):
+        self.add_shared_skill()
+        BUILD.build(self.root)
+        BUILD.install_links(BUILD.plan_links(self.root))
+        moved = Path(self.temporary.name) / "another-user"
+        self.home.rename(moved)
+        self.home_lookup.return_value = moved
+        root = moved / ".ai"
+        for link, source in [(moved / ".pi/AGENTS.md", root / "pi/AGENTS.md"), (moved / ".pi/agent/skills/example", root / "shared/skills/example"), (moved / ".config/opencode/skills/example", root / "shared/skills/example")]:
+            self.assertFalse(link.readlink().is_absolute())
+            self.assertTrue(link.samefile(source))
+        self.assertEqual(BUILD.plan_links(root), [])
+        BUILD.build(root, check=True)
+
+    def test_link_check_is_read_only(self):
+        self.add_shared_skill()
+        workspace = self.home / ".pi/AGENTS.md"
+        previous = workspace.readlink()
+        with self.assertRaisesRegex(ValueError, "not relative"):
+            BUILD.install_links(BUILD.plan_links(self.root), check=True)
+        self.assertEqual(workspace.readlink(), previous)
+        self.assertFalse((self.home / ".config/opencode/skills/example").exists())
+
+    def test_unrelated_links_and_real_directories_are_never_replaced(self):
+        self.add_shared_skill()
+        link = self.home / ".config/opencode/skills/example"
+        link.parent.mkdir(parents=True)
+        foreign = self.home / "other-skill"
+        foreign.mkdir()
+        link.symlink_to(foreign)
+        with self.assertRaisesRegex(ValueError, "unrelated"):
+            BUILD.plan_links(self.root)
+        self.assertTrue(link.samefile(foreign))
+        link.unlink()
+        link.mkdir()
+        (link / "keep.txt").write_text("Unmanaged data")
+        with self.assertRaisesRegex(ValueError, "non-symlink"):
+            BUILD.plan_links(self.root)
+        self.assertEqual((link / "keep.txt").read_text(), "Unmanaged data")
+
+    def test_link_failure_restores_previous_targets(self):
+        self.add_shared_skill()
+        workspace = self.home / ".pi/AGENTS.md"
+        previous = workspace.readlink()
+        changes = BUILD.plan_links(self.root)
+        replace_link = BUILD.replace_link
+        target_failure = self.home / ".config/opencode/skills/example"
+
+        def fail_last_target(link, target):
+            if link == target_failure:
+                raise OSError("Injected link replacement failure")
+            replace_link(link, target)
+
+        with mock.patch.object(BUILD, "replace_link", side_effect=fail_last_target):
+            with self.assertRaisesRegex(OSError, "Injected"):
+                BUILD.install_links(changes)
+        self.assertEqual(workspace.readlink(), previous)
+        self.assertFalse((self.home / ".pi/agent/skills/example").is_symlink())
+        self.assertFalse(target_failure.is_symlink())
+
+    def test_link_changed_after_planning_is_not_clobbered(self):
+        self.add_shared_skill()
+        changes = BUILD.plan_links(self.root)
+        workspace = self.home / ".pi/AGENTS.md"
+        workspace.unlink()
+        workspace.write_text("A concurrent manual edit")
+        with self.assertRaisesRegex(ValueError, "changed"):
+            BUILD.install_links(changes)
+        self.assertEqual(workspace.read_text(), "A concurrent manual edit")
+
+    def test_cli_uses_its_location_and_the_environment_home(self):
+        self.add_shared_skill()
+        shutil.copyfile(BUILD.__file__, self.root / "build.py")
+        environment = {"HOME": str(self.home), "PATH": os.environ["PATH"]}
+        for flags in [["--links"], ["--links", "--check"]]:
+            result = subprocess.run([sys.executable, str(self.root / "build.py"), *flags], env=environment, capture_output=True, text=True, timeout=5)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.home / ".pi/agent/skills/example").samefile(self.root / "shared/skills/example"))
+        self.assertFalse((self.home / ".pi/AGENTS.md").readlink().is_absolute())
 
     def test_atomic_replace_failure_leaves_no_temporary_file(self):
         directory = self.root / "shared"

@@ -74,7 +74,7 @@ test('command-only navigation adds no sidebar, gutter, passive hover or input ob
   f.terminal.input('\x1b[<35;99;12M');f.tui.renderNow(true);
   assert.equal(f.tui.hasOverlay(),false,'Mouse movement must not open passive reply UI');
   assert.equal(f.terminal.stdinBuffer.listenerCount('data'),listeners);
-  f.navigator.openMenu();f.tui.renderNow(true);assert.match(screen(f),/Parent replies · 100/);
+  f.navigator.openMenu();f.tui.renderNow(true);assert.match(screen(f),/Replies · 100/);
   f.terminal.input('q');assert.equal(f.tui.hasOverlay(),false);assert.equal(f.tui.getFocusedComponent(),f.editor);
  }finally{f.navigator.dispose();f.tui.stop();}
 });
@@ -84,7 +84,7 @@ test('history clipping is visible inside the reply browser without warning notif
  f.navigator.update(collectReplies(replies,new Set(replies.map(reply=>reply.id))),theme);
  try{
   assert.equal(f.navigator.attach(f.tui),true);f.tui.renderNow(true);assert.equal(f.tui.hasOverlay(),false);assert.deepEqual(f.warnings,[]);
-  f.navigator.openMenu();f.tui.renderNow(true);assert.match(screen(f),/Parent replies · 512 · limited/);
+  f.navigator.openMenu();f.tui.renderNow(true);assert.match(screen(f),/Replies · 512 · limited/);
   const top=f.view.scrollTop;const before=screen(f);
   for(let index=0;index<2;index+=1){f.terminal.input('\x1b[<65;60;5M');f.tui.renderNow(true);}
   assert.equal(f.view.scrollTop,top,'Wheel navigation in the list must not move the transcript');

@@ -1,4 +1,4 @@
-# Parent replies
+# Replies
 
 Command-only browser for completed parent assistant replies. Run `/replies` for a newest-first list; no sidebar, ticks, hover popup, reserved columns or terminal input observers. Reload Pi yourself after updating the extension.
 
@@ -27,7 +27,7 @@ Bounds: last 20,000 branch entries, newest 512 candidate finals, 65,536 UTF-16 c
 ## Verify
 
 ```sh
-node --test agent/extensions/parent-replies/*.test.mjs
+node --test agent/extensions/replies/*.test.mjs
 node --test agent/extensions/docket/*.test.mjs agent/extensions/message-board/*.test.mjs agent/extensions/god/tests.test.mjs
 ```
 

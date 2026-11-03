@@ -12,4 +12,4 @@ export const themeModule=await import(pathToFileURL(join(packageRoot,'dist/modes
 export const {createChatViewport}=await import(pathToFileURL(join(packageRoot,'dist/modes/interactive/chat-viewport.js')).href);
 export const {createInteractiveTuiReference}=await import(pathToFileURL(join(packageRoot,'dist/modes/interactive/tui-renderer.js')).href);
 initTheme('dark');
-export const {default:parentReplies}=await loader.import(new URL('./index.ts',import.meta.url).pathname);
+export const {default:replies}=await loader.import(new URL('./index.ts',import.meta.url).pathname);

@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LIMITS } from './model.mjs';
-import { parentReplies,themeModule } from './test-runtime.mjs';
+import { replies,themeModule } from './test-runtime.mjs';
 
 function fixture(branch,renderWidget=false){
  const handlers=new Map(),commands=new Map(),notices=[];let inputSubscriptions=0;
- parentReplies({on(name,handler){handlers.set(name,handler);},registerCommand(name,command){commands.set(name,command);}});
+ replies({on(name,handler){handlers.set(name,handler);},registerCommand(name,command){commands.set(name,command);}});
  const context={hasUI:true,mode:'tui',sessionManager:{getBranch:()=>branch,buildContextEntries:()=>branch,getLeafId:()=>branch.at(-1)?.id??null,getEntry:id=>branch.find(entry=>entry.id===id)},ui:{theme:themeModule.theme,notify(message){notices.push(message);},setWidget(_name,factory){if(renderWidget)factory({mode:'regular'});},onTerminalInput(){inputSubscriptions+=1;return ()=>{};}}};
  return {handlers,commands,notices,context,inputSubscriptions:()=>inputSubscriptions};
 }

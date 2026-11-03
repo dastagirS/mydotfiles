@@ -148,7 +148,7 @@ export class ReplyNavigator {
    const rows=[...this.snapshot.replies].reverse();const count=Math.max(1,Math.min(MENU_ITEMS_MAX,Math.floor((this.tui.terminal.rows-7)/2)));
    const current=Math.max(0,rows.findIndex(reply=>reply.id===this.menuId));const start=Math.max(0,Math.min(current-Math.floor(count/2),rows.length-count));
    const selected=rows.slice(start,start+count);renderedIds=selected.map(reply=>reply.id);
-   const body=[this.theme.fg('accent',` Parent replies · ${rows.length}${this.snapshot.limited?' · limited':''}`),''];
+   const body=[this.theme.fg('accent',` Replies · ${rows.length}${this.snapshot.limited?' · limited':''}`),''];
    for(const reply of selected){body.push(this.theme.fg(reply.id===this.menuId?'accent':'text',`${reply.id===this.menuId?'›':' '} ${summary(reply.text)}`),this.theme.fg('dim',`  ${reply.archived?'saved · ':''}${summary(reply.question)}`));}
    if(!selected.length)body.push(' No completed parent replies yet.');
    body.push('',this.theme.fg('muted',' ↑↓ browse · Enter jump · Esc close'));return this.frame(body,width);
@@ -211,8 +211,8 @@ export class ReplyNavigator {
    this.view.scrollTo(row,{disableFollow:true});this.tui.requestRender();return true;
   } catch {this.fail('Reply navigation unavailable; conversation state was not changed.');return false;}
  }
- private fail(message:string):void {if(!this.warnings.has(message)){this.warnings.add(message);try{this.warn(message);}catch{console.error('[parent-replies] UI notice unavailable.');}}}
- private notifyUnavailable():void {this.fail('Parent reply navigation requires a supported Pi fullscreen layout. No settings were changed.');}
+ private fail(message:string):void {if(!this.warnings.has(message)){this.warnings.add(message);try{this.warn(message);}catch{console.error('[replies] UI notice unavailable.');}}}
+ private notifyUnavailable():void {this.fail('Reply navigation requires a supported Pi fullscreen layout. No settings were changed.');}
  dispose():void {
   if(this.disposed)return;this.disposed=true;
   try{this.menu?.hide();}catch{this.fail('Reply overlay cleanup failed.');}finally{this.menu=undefined;}

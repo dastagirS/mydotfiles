@@ -2,17 +2,17 @@ import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-a
 import { collectReplies, LIMITS } from './model.mjs';
 import { ReplyNavigator } from './view';
 
-const WIDGET_KEY='parent-replies';
+const WIDGET_KEY='replies';
 const UPDATE_DELAY_MS=50;
 
-export default function parentReplies(pi:ExtensionAPI):void {
+export default function replies(pi:ExtensionAPI):void {
  let navigator:ReplyNavigator|undefined;
  let context:ExtensionContext|undefined;
  let timer:ReturnType<typeof setTimeout>|undefined;
  let leaf:string|null|undefined;
  let active=false;
  const warnings=new Set<string>();
- const warn=(message:string)=>{if(!warnings.has(message)){warnings.add(message);try{context?.ui.notify(message,'warning');}catch{console.error('[parent-replies] UI notice unavailable.');}}};
+ const warn=(message:string)=>{if(!warnings.has(message)){warnings.add(message);try{context?.ui.notify(message,'warning');}catch{console.error('[replies] UI notice unavailable.');}}};
  const dispose=()=>{
   active=false;if(timer)clearTimeout(timer);timer=undefined;
   navigator?.dispose();navigator=undefined;context=undefined;leaf=undefined;warnings.clear();
@@ -41,7 +41,7 @@ export default function parentReplies(pi:ExtensionAPI):void {
    } else {navigator.syncLayout();navigator.update(snapshot,current.ui.theme);}
    leaf=current.sessionManager.getLeafId();
    return true;
-  } catch {warn('Parent reply history disabled after a refresh failure; reload after correcting the session/layout. Conversation state was not changed.');navigator?.dispose();return false;}
+  } catch {warn('Reply history disabled after a refresh failure; reload after correcting the session/layout. Conversation state was not changed.');navigator?.dispose();return false;}
  };
  const schedule=(current:ExtensionContext)=>{
   if(!active)return;
@@ -50,7 +50,7 @@ export default function parentReplies(pi:ExtensionAPI):void {
   timer=setTimeout(()=>{timer=undefined;if(active&&context)refresh(context);},UPDATE_DELAY_MS);
   timer.unref();
  };
- pi.registerCommand('replies',{description:'Browse parent final responses without changing model context',handler:async (_arguments,current)=>{refresh(current);if(current.hasUI&&current.mode==='tui')navigator?.openMenu();else current.ui.notify('Parent replies are available in Pi fullscreen interactive mode.','warning');}});
+ pi.registerCommand('replies',{description:'Browse parent final responses without changing model context',handler:async (_arguments,current)=>{refresh(current);if(current.hasUI&&current.mode==='tui')navigator?.openMenu();else current.ui.notify('Replies are available in Pi fullscreen interactive mode.','warning');}});
  pi.on('session_start',(_event,current)=>{dispose();active=current.hasUI&&current.mode==='tui';if(active)refresh(current);});
  pi.on('session_shutdown',dispose);
  pi.on('turn_end',(event,current)=>{if(event.message.role==='assistant'&&event.message.stopReason==='stop')schedule(current);});

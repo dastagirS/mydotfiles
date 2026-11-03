@@ -1,6 +1,6 @@
 # OpenCode Workspace
 
-Personal OpenCode configuration. Shared coding and communication rules are generated from `/home/ichigo/.ai/shared/AGENTS.md`; runtime-specific instructions below describe OpenCode, not Pi.
+Personal OpenCode configuration. Shared coding and communication rules are generated from `~/.ai/shared/AGENTS.md`; runtime-specific instructions below describe OpenCode, not Pi.
 
 ## Locations
 
@@ -25,4 +25,4 @@ Personal OpenCode configuration. Shared coding and communication rules are gener
 
 ## Shared Configuration
 
-Edit common rules in `/home/ichigo/.ai/shared/AGENTS.md` and OpenCode-specific instructions in `/home/ichigo/.ai/opencode/AGENTS.md`. Run `python3 /home/ichigo/.ai/build.py` after instruction edits. This client's generated `AGENTS.md` is not an editable source. Portable skill directories link to `/home/ichigo/.ai/shared/skills/`; do not make local copies.
+Edit common rules in `~/.ai/shared/AGENTS.md` and OpenCode-specific instructions in `~/.ai/opencode/AGENTS.md`. Run `python3 ~/.ai/build.py` after instruction edits. This client's generated `AGENTS.md` is not an editable source. Portable skill directories link to `~/.ai/shared/skills/`; do not make local copies.

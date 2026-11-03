@@ -19,12 +19,12 @@ OUTPUT_BYTES_MAX = 4 * 1024 * 1024
 WAIT_SECONDS_MAX = 12
 TOTAL_SECONDS_MAX = 45
 started=time.monotonic()
-profile = Path(tempfile.mkdtemp(prefix='pi-parent-replies-application-'))
+profile = Path(tempfile.mkdtemp(prefix='pi-replies-application-'))
 (profile / 'agent').mkdir()
 (profile / 'home').mkdir()
 (profile / 'work').mkdir()
 (profile / 'sessions').mkdir()
-extension_directory=profile/'agent/extensions/parent-replies'
+extension_directory=profile/'agent/extensions/replies'
 extension_directory.mkdir(parents=True)
 for name in ['index.ts','model.mjs','view.ts']:
     shutil.copyfile(SOURCE/name,extension_directory/name)
@@ -108,12 +108,12 @@ def wait_for(text, start=0):
 try:
     wait_for('@ready')
     assert read_state().get('sidebar') is False, 'No passive sidebar should be present'
-    assert b'Parent replies need' not in output, 'Supported SDK must not produce a startup compatibility warning'
+    assert b'Replies need' not in output, 'Supported SDK must not produce a startup compatibility warning'
     assert b'Some replies exceed safe history/text limits' not in output, 'History limits must not produce startup warnings'
     before=session.read_bytes()
     point=len(output)
     os.write(master,b'/replies\r')
-    wait_for('Parent replies',point)
+    wait_for('Replies',point)
     wait_for('· limited',point)
     wait_for('@menu-open')
     os.write(master,b'\x1b[F\r')
@@ -129,7 +129,7 @@ try:
     assert read_state().get('sidebar') is False, 'Reload must not restore the removed sidebar'
     point=len(output)
     os.write(master,b'/replies\r')
-    wait_for('Parent replies',point)
+    wait_for('Replies',point)
     wait_for('· limited',point)
     wait_for('@menu-open')
     point=len(output)
