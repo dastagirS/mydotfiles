@@ -6,11 +6,11 @@ Personal OpenCode configuration. Shared coding and communication rules are gener
 
 | Location | Purpose |
 | --- | --- |
-| `opencode.jsonc` | Existing providers, permissions, plugins and MCP configuration; unchanged by this sync |
-| `skills/` | Symlinked shared skills and their original resources, plus the existing command's updated ponytail-review compatibility skill |
+| `opencode.jsonc` | Client-specific providers, permissions, plugins and MCP configuration, managed separately from shared instructions |
+| `skills/` | Only the shared portable Pi skills and their original resources, symlinked from `~/.ai/shared/skills/` |
 | `prompts/` | Reference-only prompt templates; not registered as commands |
 | `agent/*.md.bak` | Disabled custom subagent definitions |
-| `command/`, `commands/` | Existing command definitions; unchanged |
+| `command/`, `commands/` | Client command definitions; obsolete OpenCode-only skill wrappers removed |
 
 ## Runtime and delegation boundaries
 
@@ -21,7 +21,7 @@ Personal OpenCode configuration. Shared coding and communication rules are gener
 - Pi's managed `subagent`/message-board and `docket` skills are not active here: their Pi tools have not been integrated. Do not substitute OpenCode's native subagent tool for the Pi RPC protocol or invent missing tools.
 - Load skills through OpenCode's available skill tool using the directory ID, for example `skill({ id: 'code-reviewer' })`. Display names can differ: `code-reviewer` displays as `code-review`; `ffframes` displays as `fframes-video`.
 - Use only tools actually available in this OpenCode session. Pi extensions, shortcuts, prompt commands and secret-cloaking behavior are not implicitly installed by copying Markdown.
-- Prompts in `prompts/` are reference files only. Existing command definitions have deliberately not been updated or enabled by this sync.
+- Prompts in `prompts/` are reference files only. Copying shared skills does not register new commands. Remaining command wrappers are managed separately from the shared skill set.
 
 ## Shared Configuration
 

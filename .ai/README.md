@@ -44,7 +44,7 @@ The builder validates both generated files' sources before writing, caps text at
 
 Both clients retain their existing skill paths, now symlinked to `shared/skills/`. Edit the shared original. Skill descriptions already loaded into a client may require a manual reload or new session. No reload, provider call or worker action runs automatically.
 
-Docket/subagent stay Pi-only. OpenCode's existing `ponytail-review` compatibility skill remains OpenCode-only. Commands, reference prompts, disabled custom agents, providers, permissions, packages, credentials and runtime data are not shared or changed.
+Docket/subagent stay Pi-only. OpenCode's skill directory must match the shared portable Pi collection, with no legacy-only additions. The old ponytail-review/spec-builder/spec-planner skill copies and their matching command wrappers were archived outside discovery. Lumyx was removed from OpenCode's provider configuration. Other client-specific commands, reference prompts, disabled custom agents, permissions, plugins, MCP configuration, packages, credentials and runtime data remain separate.
 
 To add a portable skill, create its complete directory under `shared/skills/`, then run `python3 ~/.ai/build.py --links` to link it into both clients' existing `skills/` folders. Use the same directory ID in both clients; OpenCode skill IDs and Pi display names/tool syntax are not interchangeable. Do not put a Pi-specific protocol in shared discovery merely because its Markdown is readable elsewhere.
 

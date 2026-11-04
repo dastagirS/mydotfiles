@@ -79,28 +79,6 @@
     "websearch": "allow",
     "codesearch": "allow"
   },
-  "provider": {
-    "lumyx-ai": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "Anomaly (IN)",
-      "options": {
-        "baseURL": "https://lumyx-ai.site/api/v1"
-      },
-      "models": {
-        "chatgpt_5.5_free": {
-          "name": "GPT-5.5",
-          "variants": {
-            "none":    { "reasoningEffort": "none",    "textVerbosity": "auto" },
-            "minimal": { "reasoningEffort": "minimal", "textVerbosity": "auto" },
-            "low":     { "reasoningEffort": "low",     "textVerbosity": "auto" },
-            "medium":  { "reasoningEffort": "medium",  "textVerbosity": "auto" },
-            "high":    { "reasoningEffort": "high",    "textVerbosity": "auto" },
-            "xhigh":   { "reasoningEffort": "xhigh",   "textVerbosity": "auto" }
-          }
-        }
-      }
-    }
-  },
   "mcp": {
     "jira": {
       "type": "remote",

@@ -27,6 +27,16 @@ class SharedSetupTests(unittest.TestCase):
                     self.assertFalse(link.readlink().is_absolute(), f"Managed link is not portable: {link}")
                     self.assertTrue(link.samefile(skill), f"Client uses a different skill copy: {link}")
 
+    def test_opencode_has_only_the_shared_pi_skill_set(self):
+        shared = list(islice((CONFIGURATION_ROOT / "shared/skills").iterdir(), DIRECTORY_COUNT_MAX + 1))
+        installed = list(islice((Path.home() / ".config/opencode/skills").iterdir(), DIRECTORY_COUNT_MAX + 1))
+        self.assertLessEqual(len(shared), DIRECTORY_COUNT_MAX)
+        self.assertLessEqual(len(installed), DIRECTORY_COUNT_MAX)
+        self.assertEqual({path.name for path in installed}, {path.name for path in shared})
+        for name in ["spec-builder", "spec-planner", "ponytail-review"]:
+            self.assertFalse((Path.home() / ".config/opencode/tmp" / name / "SKILL.md").exists())
+            self.assertFalse((Path.home() / ".config/opencode/command" / (name + ".md")).exists())
+
     def test_pi_workspace_uses_the_canonical_document(self):
         workspace = Path.home() / ".pi/AGENTS.md"
         self.assertTrue(workspace.is_symlink())
