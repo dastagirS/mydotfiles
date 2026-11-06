@@ -9,6 +9,7 @@ vim.g.background = "light"
 vim.opt.swapfile = false
 vim.opt.clipboard = "unnamedplus"
 vim.opt.undofile = true
+vim.cmd.source(vim.fn.expand("~/.vim/plugin/netrw-trash.vim"))
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.timeoutlen = 300
