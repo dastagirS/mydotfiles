@@ -1,300 +1,80 @@
 ---
 name: worktrees
-description: Manage isolated copy-on-write development workspaces with the Rift CLI. Use when the user wants to create, inspect, list, switch between, or remove isolated workspaces for a repository or feature.
-allowed-tools: Bash(rift:*)
+description: Manage isolated development workspaces with Git worktrees by default, Rift on Linux Btrfs, and macOS copy-on-write folder copies. Use when the user asks to create, inspect, list, switch between, or remove a workspace for a repository or feature.
 ---
 
-# Workspaces with Rift
+# Worktrees
 
-Rift is an experimental alternative to Git worktrees. It creates copy-on-write or reflink-backed workspaces, which are fast and save disk space while keeping work isolated.
+For creation, choose the backend from the source checkout's platform and filesystem. For inspection or removal, identify the existing workspace's actual backend; never convert or move it merely because the current platform's creation default differs:
 
-Use Rift only when the user wants an isolated workspace. Do not substitute Rift for ordinary Git branching or `git worktree` without explaining the difference.
+| Environment | Backend | Destination |
+| --- | --- | --- |
+| macOS | `cp -cR` for directories; `cp -c` for files | `~/.worktrees/{projectname}/{worktreename}` |
+| Linux, source checkout on Btrfs | Rift | Rift's own managed layout |
+| Other environments, or filesystem not confirmed as Btrfs | Git worktrees | `~/.worktrees/{projectname}/{worktreename}` |
 
-**Source documentation:** <https://github.com/anomalyco/rift>
+Use `uname -s` to identify the platform. On Linux, check the actual source path with `findmnt -no FSTYPE -T "$source"`; do not infer its filesystem from another mount. If the probe is unavailable, disclose that and use the Git default. Do not install detection tools.
 
-## Setup
+## Before creation
 
-### Install
+- Confirm the source checkout, project name, workspace name, and intended branch/ref. Inspect its Git status without changing it; never stash, reset, or commit source work automatically.
+- Validate project/workspace names as single path components. Reject empty names, `.`/`..`, path traversal, path separators, and leading `-`. Quote all paths. Resolve the source and destination parent to their real locations before containment/filesystem checks.
+- For Git and macOS only, set `target="$HOME/.worktrees/$project_name/$worktree_name"`. Require a new, non-symlink destination outside the source tree; never merge into or overwrite an existing path. Create only its parent directory.
+- Read applicable hooks/configuration before running commands that may execute them. Do not install dependencies or skip hooks automatically.
 
-Install the CLI using one of the documented methods:
+## Git default
 
-```bash
-npm install -g rift-snapshot
-# or
-bun add -g rift-snapshot
+A Git worktree starts from a Git ref, not a copy of the source's dirty or ignored files. Make that distinction clear when the user expects their working-folder state or dependencies to carry over.
+
+Create a new branch from the agreed ref:
+
+```sh
+mkdir -p "$HOME/.worktrees/$project_name"
+git -C "$source" worktree add -b "$branch_name" "$target" "$start_ref"
 ```
 
-Release archives are available from the [latest GitHub release](https://github.com/anomalyco/rift/releases/latest).
+For an existing branch, omit `-b` and use that branch as the final argument. Check branch validity and whether it is already checked out; do not force, detach, or invent a branch strategy to bypass a conflict. If creation fails, inspect the result before retrying.
 
-Before using it, verify the command exists:
+Verify with `git -C "$source" worktree list --porcelain` and Git status in the new path. Keep the original checkout untouched.
 
-```bash
-rift --help
-```
+## Linux Btrfs: Rift
 
-Do not install packages automatically unless the user requested installation or the environment's setup workflow explicitly allows it.
+Check `command -v rift`. If missing, stop and ask the user to install Rift; **never install it yourself** or silently fall back to another backend. [Rift documentation](https://github.com/anomalyco/rift).
 
-### Platform support
+Before `rift init`, confirm the exact target and authorization: initializing an ordinary Btrfs directory can convert/swap its filesystem layout. Inspect `.rift.toml` because lifecycle hooks execute code. Do not bypass hooks without approval.
 
-- **Linux x64:** writable btrfs snapshots or native per-file reflinks.
-- **macOS x64/arm64:** APFS `clonefile`.
-- **Windows x64:** the package is published, but workspace creation is not implemented.
+From the selected source, initialize only if needed, then create:
 
-Rift is experimental. Mention this before initializing a repository when the user has not used Rift before.
-
-## Core workflow
-
-### 1. Initialize a source workspace
-
-From the repository or directory to manage:
-
-```bash
-cd ~/code/app
-rift init
-```
-
-`rift init` searches upward for an existing Rift root. If none exists, it selects the nearest Git root. Use `--here` to initialize exactly the selected directory:
-
-```bash
+```sh
 rift init --here
+rift create --name "$worktree_name" --copy-all
 ```
 
-Initialization can be destructive to the filesystem layout on Linux btrfs: the first initialization of an ordinary btrfs directory imports it into a new btrfs subvolume and swaps it into the same path. On other platforms it registers the directory in place after checking clone/reflink support.
+Rift owns its workspace paths. **Do not pass `--into` or relocate its folders to `~/.worktrees`.** Capture and use the path Rift prints rather than predicting it. Retain `--copy-all` unless the user explicitly requests a filtered copy. Verify Git status and branch state; Rift copies can have detached HEADs and preserve dirty source state.
 
-Before running `rift init`:
+If a hook or creation fails, inspect `rift list`/`rift ancestors` and the reported path before retrying: a workspace may already exist. Do not infer cleanup permission from a failed command.
 
-1. Confirm the target path.
-2. Confirm the user wants Rift metadata and filesystem initialization there.
-3. Check for uncommitted work or backups when the platform may convert the directory.
+## macOS: copy the working folder
 
-If the target is already registered but `.rift` is missing, `rift init` restores the marker and completes required setup.
+Use a self-contained checkout with a real `.git` directory. If `.git` is a pointer/symlink, Git metadata is shared or external, or the checkout records other linked worktrees, stop and ask for a safe alternative rather than copying those references. Inspect external symlinks/submodules before copying; copied links can still refer outside the new folder. Copy only a stable source; coordinate concurrent writers rather than stopping unrelated processes or claiming a consistent snapshot during writes.
 
-### 2. Create a workspace
+Confirm the source and destination parent are on the same APFS filesystem, using macOS filesystem metadata such as `diskutil info`. `cp -c` can fall back to a full copy on an unsupported or different filesystem; if clone eligibility cannot be confirmed, ask before proceeding. Do not claim physical block sharing merely because the command succeeded.
 
-Create a child workspace from an initialized Rift root. Always include `--copy-all` so dependencies, caches, and build artifacts are retained unless the user explicitly requests a filtered copy:
+For a directory, copy the whole working folder, including hidden and ignored files:
 
-```bash
-rift create --name foo --copy-all
-rift create --name foo --copy-all --into /fast/rifts
+```sh
+mkdir -p "$HOME/.worktrees/$project_name"
+cp -cR "$source" "$target"
 ```
 
-Capture the path printed to stdout. Do not predict or reconstruct the workspace path.
+For an individual file, use `cp -c "$source" "$target"`. Never substitute hard links or retry without `-c` automatically. A failed recursive copy may leave a partial destination: report it and inspect before retrying.
 
-Example:
+A copied repository is an independent checkout, not a registered Git worktree. Before editing it, verify its Git directory/common directory resolve inside the copy and inspect its status; do not switch the source branch or alter source Git metadata. Do not claim a new branch was created by the copy.
 
-```bash
-workspace_path="$(rift create --name parser-fix --copy-all)"
-printf 'Created workspace: %s\n' "$workspace_path"
-cd "$workspace_path"
-```
+## Inspect and remove
 
-Rift normally omits heavyweight regenerable artifacts such as `node_modules`, `target`, virtual environments, framework caches, `dist`, `build`, and `coverage`. This skill defaults to `--copy-all` to retain those files along with manifests and lockfiles, avoiding dependency reinstalls and rebuilds in the new workspace. Copying everything can increase disk usage and creation time.
+- Git: use `git worktree list --porcelain`; remove only the identified workspace with `git worktree remove "$target"`. Never force removal of dirty work or blindly prune registrations.
+- Rift: use `rift list` and `rift ancestors`; remove only the identified created workspace with `rift remove`. Do not remove the source root or unrelated descendants. `rift gc` permanently deletes trash and requires explicit user intent.
+- macOS copies: inspect the exact copied path and Git status. Remove only that identified copy after checking for uncommitted/untracked work, active processes, and user authorization; do not use `git worktree remove` for it.
 
-Use `--no-hooks` only when the user explicitly wants to skip configured hooks:
-
-```bash
-rift create --name parser-fix --copy-all --no-hooks
-```
-
-When the source is a Git repository, the created workspace has a detached `HEAD` and retains the source index and working-tree state. Explain this before creating a workspace when the user expects normal branch behavior.
-
-### 3. Inspect workspaces
-
-List direct active children of the current Rift workspace:
-
-```bash
-rift list
-```
-
-List parent workspaces, nearest first:
-
-```bash
-rift ancestors
-```
-
-Use these commands instead of guessing the parent/child relationship or workspace path.
-
-### 4. Work inside the created workspace
-
-After creation, run commands with the captured workspace path:
-
-```bash
-cd "$workspace_path"
-git status --short
-git branch --show-current
-git diff
-```
-
-A created workspace is a separate filesystem location, but it is not necessarily a normal Git branch checkout. Check its detached-HEAD state and current status before making changes.
-
-### 5. Remove workspaces
-
-Remove the current created Rift subtree:
-
-```bash
-rift remove
-```
-
-Remove a specific created workspace and skip its hooks:
-
-```bash
-rift remove --no-hooks /path/to/workspace
-```
-
-Remove descendants while preserving the selected source workspace:
-
-```bash
-rift remove --children /path/to/source
-```
-
-Removing a created workspace moves its active subtree into adjacent `.trash` storage. It is not immediately physically deleted.
-
-Removing a source root requires `-f`:
-
-```bash
-rift remove -f /path/to/source
-```
-
-This leaves the source directory on disk, removes its `.rift` marker, and moves registered descendants to trash.
-
-### 6. Garbage-collect removed workspaces
-
-Physically delete trashed workspaces and prune missing registry entries:
-
-```bash
-rift gc
-```
-
-`rift gc` is destructive and may be irreversible. Require explicit user intent before running it. Do not combine removal and garbage collection unless the user specifically asks for permanent cleanup.
-
-## Hooks
-
-If the source contains `.rift.toml`, Rift can run hooks during lifecycle operations:
-
-```toml
-version = 1
-
-[[hooks.precreate]]
-run = "pnpm run check"
-
-[[hooks.postcreate]]
-run = "pnpm install --frozen-lockfile"
-
-[[hooks.postcreate]]
-run = "pnpm run codegen"
-```
-
-Hook locations:
-
-- `precreate` runs in the source workspace before creation.
-- `postcreate` runs in the new workspace after it is registered and prepared.
-- `preremove` runs in the selected workspace before removal.
-- `postremove` runs after removal, from the moved trash directory when the selected workspace was trashed, or from the selected workspace when it was preserved.
-
-A failing `precreate` hook prevents creation. A failing `postcreate` hook leaves the workspace registered and makes `rift create` exit with an error.
-
-Treat hooks as arbitrary code execution. Inspect `.rift.toml` before creating or removing a workspace when hooks are present. Use `--no-hooks` only as an intentional choice, not as a default workaround.
-
-## Shell integration
-
-For zsh or bash:
-
-```bash
-eval "$(rift shell-init zsh)"
-# or
-eval "$(rift shell-init bash)"
-```
-
-For Nushell:
-
-```nu
-rift shell-init nushell | save -f (($nu.user-autoload-dirs | first) | path join "rift.nu")
-```
-
-The shell wrapper changes directory after initialization, creation, or removal of the current created workspace. Without shell integration, a subprocess cannot change the parent shell's directory; use the captured path and `cd` explicitly.
-
-## Storage and registry
-
-Each managed workspace has a `.rift` marker containing its identifier. Rift stores paths, parent identifiers, and trash entries in an SQLite registry.
-
-The default layout is adjacent to the registered source root:
-
-```text
-~/code/app/                         source workspace
-~/code/.rifts/app/parser-fix/      created workspace
-~/code/.rifts/app/.trash/           removed workspace storage
-```
-
-Use `--into` when the user explicitly wants workspace storage elsewhere:
-
-```bash
-rift create --name parser-fix --copy-all --into /fast/rifts
-```
-
-## Safety rules
-
-- Confirm the target before `rift init`; initialization may alter filesystem layout on Linux btrfs.
-- Default to `--copy-all`; omit it only when the user explicitly requests a filtered copy.
-- Inspect `.rift.toml` before running operations that may execute hooks.
-- Capture and use Rift’s printed workspace path; never infer it from naming conventions.
-- Do not assume a created workspace has a branch; check for detached `HEAD`.
-- Treat `rift remove -f` as source-root metadata removal, not source-directory deletion.
-- Treat `rift gc` as permanent cleanup and require explicit confirmation.
-- Do not close or remove a workspace the user did not identify.
-- Keep workspaces with active work intact unless the user explicitly asks to remove them.
-
-## Troubleshooting
-
-### `rift create` cannot find a root
-
-Initialize the intended source directory first:
-
-```bash
-cd /path/to/repository
-rift init --here
-rift create --name feature-name --copy-all
-```
-
-### Creation is unavailable on Windows
-
-Rift's documented Windows backend does not implement workspace creation. Use a supported platform or ordinary Git worktrees instead.
-
-### A hook fails
-
-Read the error and inspect `.rift.toml`. The workspace may remain registered after a failed `postcreate` hook. Do not immediately remove it; first determine whether the hook needs to be rerun, skipped intentionally, or fixed.
-
-### A workspace is missing from `rift list`
-
-Use both commands to distinguish an inactive child from a parent relationship:
-
-```bash
-rift list
-rift ancestors
-```
-
-If a registered path is missing, `rift gc` can prune missing entries, but only after confirming that the missing workspace is no longer needed.
-
-## JavaScript API
-
-For Bun or Node integrations, Rift exposes:
-
-```ts
-import { ancestors, create, gc, init, list, remove } from "rift-snapshot";
-
-init({ at: process.cwd() });
-const workspace = create({ from: process.cwd(), name: "schema-work", copyAll: true });
-console.log(list({ of: process.cwd() }));
-console.log(ancestors({ of: workspace }));
-remove({ at: workspace });
-gc();
-```
-
-The Node binding requires Node.js 26.1 or later with experimental FFI enabled:
-
-```bash
-node --experimental-ffi app.mjs
-```
-
-With Node's permission model, also pass `--allow-ffi`.
-
-Operation failures throw `RiftError` with a `code` and, when relevant, a `path`.
+Never remove active work, run wildcard cleanup, or delete another workspace as a recovery shortcut. Report the backend, actual path, branch/state, and checks performed. Do not create a workspace merely because this skill was loaded.
