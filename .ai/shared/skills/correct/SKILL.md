@@ -42,7 +42,7 @@ For a cheap regression path, first run the smallest behavior-focused check again
 
 Do not rewind the user's working tree, switch branches, or create workspaces to reproduce history without authorization. If old behavior cannot be exercised safely, state that limitation and use the strongest available check. Never weaken expected behavior or verification merely to make it pass.
 
-Review changes directly in the parent context. Do not automatically commit, push, open a PR, file tickets, notify external services, or delegate a review.
+Review changes directly in the current session. Do not automatically commit, push, open a PR, file tickets, notify external services, or delegate a review.
 
 ## Report
 

@@ -10,6 +10,12 @@ When writing code:
 - Handle all errors. 92% of catastrophic failures come from unhandled non-fatal errors.
 - Always say why: explain rationale, not just what.
 
+### Temporary artifacts
+
+- Treat `/tmp` and other temporary locations as task-scoped scratch space. Track the files and directories you create, and remove them as soon as they are no longer needed, before declaring the task complete. Arrange cleanup on failure or cancellation as well.
+- Before cleanup, preserve user-requested deliverables and necessary verification evidence in an agreed durable location. Never leave the only copy of a deliverable in temporary storage.
+- Delete only artifacts created for the current task. Never broadly wipe temporary directories or remove pre-existing, unrelated, or still-needed data. Verify cleanup succeeded; if cleanup is unsafe or blocked, report what remains and why.
+
 ## Performance
 
 - Think about performance from the start. Best wins come in the design phase.
@@ -86,12 +92,16 @@ When writing code:
 
 ## Review Before Committing
 
-When the user asks for a commit:
+When the user requests a commit, run the following workflow in the current session. That request authorizes committing once the gates pass; do not add a routine human-approval step. Subagents may assist only when explicitly delegated; do not delegate the code review itself. A review-only request does not authorize a commit.
 
-1. Review the exact changes intended for that commit in the current parent agent context, using the code-review skill. Read affected files and relevant callers/tests; do not infer safety from the diff alone or delegate the review.
-2. Before committing, report substantiated findings that could cause regressions, security issues, data loss, or compatibility breakage. Include severity, file/line references, the concrete failure scenario and impact, and supporting evidence. Clearly distinguish confirmed issues from unverified risks; do not present speculative concerns as established bugs.
-3. If actionable findings remain, pause before committing and ask whether to fix them first or proceed with the risks explicitly accepted. Do not silently expand scope to fix unrelated issues or commit known problems without approval.
-4. If no actionable findings remain, say so and summarize tests run and any verification limits, then commit only the requested, reviewed changes. If fixes or scope changes alter the intended commit, review the final diff again before committing.
+1. **Static analysis:** run the relevant existing lint, type, compiler/build, and formatting checks against the intended changes. Do not install new tooling or silently apply unrelated fixes.
+2. **Verification:** run focused tests and exercise the actual behavior where practical. Follow the regression-testing rules above. Distinguish real-application evidence from unit tests, mocks, and static inspection; state what remains unverified.
+3. **Code-review skill:** use the code-review skill in the current session to review the exact intended commit diff, affected files, and relevant callers/tests. Do not infer safety from the diff alone. Substantiate findings with severity, file/line references, the concrete failure scenario and impact, and supporting evidence. Separate confirmed issues from unverified risks.
+4. **Triage:** directly fix only tiny, mechanical issues within the reviewed scope that demonstrably preserve application behavior, following the code-review skill's triage boundaries. Rerun affected static checks, verification, and code review after fixes. If a finding needs a larger fix, changes behavior, has uncertain effects, or otherwise requires a user decision, stop before implementing that fix or committing and report the finding, evidence, and decision needed. Do not broaden scope, weaken checks, or repeatedly retry a blocked approach.
+5. **Commit:** when applicable checks pass and no unresolved actionable findings remain, commit only the requested, reviewed changes without asking for additional approval. Do not push unless explicitly requested.
+6. **Report:** after committing, give a small, precise report with the commit hash, what changed, any triage fixes applied, checks actually run and their outcomes, and material verification limits. Do not imply untested behavior was verified.
+
+If fixes alter the diff, rerun affected checks and code review before committing. Explain unavailable or inapplicable checks rather than reporting them as passed; if a missing applicable check leaves a material safety question unresolved, stop for user input. If no commit was made because work is blocked, report that explicitly.
 
 ## Communication Principles
 

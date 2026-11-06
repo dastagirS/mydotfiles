@@ -63,7 +63,17 @@ Read [references/over-engineering.md](references/over-engineering.md) before rev
 - **Don't invent hypothetical problems.** If an edge case matters, explain the realistic scenario.
 - **Don't be a zealot about style.** Some "violations" are acceptable when they're the simplest option.
 - Only review the changes — not pre-existing code that wasn't modified. Flag a changed line's interaction with existing code only when the change introduces or worsens a concrete problem.
-- Do not apply fixes during review unless the user explicitly asks.
+- Honor explicit read-only review requests. Otherwise, apply only the triage fixes defined below; do not treat a review request as permission for larger fixes or commits.
+
+## Triage Fixes
+
+Directly fix a review issue only when the change is tiny, mechanical, within the reviewed scope, and demonstrably preserves application behavior. Examples include corrections from the project's existing formatter or removal of confirmed unused type-only imports. A small line count alone is not evidence of safety. Do not reformat unrelated code or invent cleanup work.
+
+Changes to logic, APIs, dependencies, configuration, security behavior, test expectations, or anything with uncertain effects are not automatic triage. Do not remove ordinary imports without considering module side effects. Do not weaken assertions, suppress diagnostics, or change tests merely to make checks pass.
+
+After triage fixes, rerun affected static checks and verification, then review the final diff again. If actionable issues remain outside these boundaries, stop before applying a larger fix or committing. Report severity, file/line references, the failure scenario, supporting evidence, and the user decision needed. Do not expand scope or keep retrying a blocked approach.
+
+Briefly report triage fixes separately from unresolved findings. If the task includes a commit request, follow the shared commit workflow: commit once its gates pass without routine approval, then give a concise post-commit report. Reviewing alone never authorizes a commit or push.
 
 ## Output
 
@@ -72,7 +82,7 @@ Read [references/over-engineering.md](references/over-engineering.md) before rev
 - Be direct about bugs and why they're bugs
 - Communicate severity honestly — don't overstate
 - Include file paths and line numbers in changed code
-- Suggest fixes when appropriate
+- Distinguish triage fixes applied from larger fixes that need user input
 - Matter-of-fact tone, no flattery
 - If there are no findings, say so; disclose any verification limits
 
