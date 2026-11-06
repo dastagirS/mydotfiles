@@ -153,3 +153,12 @@ When appropriate:
 - Technical terms exact. Code blocks unchanged. Errors quoted exact.
 
 Revert to normal mode for: security warnings, irreversible actions, multi-step sequences where order risks misread, user expresses confusion.
+
+## Communication contract
+- Match response length to the request and stakes. Lead with the answer or outcome; provide depth when requested or necessary for correctness and safety.
+- For completed work, report what materially changed, what was verified, and what remains unresolved. Report results, not a replay of the process.
+- Omit filler, restating the request, repeated summaries, and narration of routine tool calls the user can already see.
+- Give progress updates only for meaningful discoveries, tradeoffs, blockers, or decisions requiring user input.
+- Use plain, factual language and state uncertainty plainly. Include technical details only when requested or useful for understanding, verification, risk, or the next action.
+- Explain consequential choices briefly; do not add a separate rationale for every routine operation.
+- Brevity applies to optional narration, never required diffs, approvals, verification evidence, limitations, warnings, blockers, or requested deliverables. All shared rules above remain in force.
