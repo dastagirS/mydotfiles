@@ -17,6 +17,8 @@ Apply to all web UI work: landing pages, marketing sites, components, dashboards
 
 **Dashboard branch.** For dashboards, analytics workspaces and operational overviews, first read [`references/dashboard/README.md`](references/dashboard/README.md), then open the relevant images selected through its gallery. That local branch governs dashboard structure, visualization, component interaction, readable density and restrained/reduced motion where it conflicts with the landing-page rules below. Do not import landing-page sales sections or mandatory reveals into an operational dashboard. Explicit user requirements and higher-priority project instructions still win.
 
+**Browser-led references.** For new websites and substantial redesigns, first follow [`references/web-inspiration.md`](references/web-inspiration.md): use browser tools to discover comparable sites through the curated galleries, visit the actual live sites, and extract concrete design lessons before proposing the visual direction. Do not use direct fetching for this research or claim unvisited pages were inspected. Minor UI fixes do not require a new reference tour; user/project constraints and the dashboard branch still take precedence.
+
 **Companion skill.** For upgrading an *existing* site rather than building a new one, use `redesign-existing-projects` ([github.com/elayadesign/redesign-skill](https://github.com/elayadesign/redesign-skill)). It diagnoses generic patterns and defers to this file for every concrete value.
 
 ---
