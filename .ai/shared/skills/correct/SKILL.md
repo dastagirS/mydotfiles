@@ -39,9 +39,9 @@ For an approved prose correction, use `session_rules` when available:
 - Call `list` first and follow `nextOffset` through all pages. Check semantic duplicates; the tool rejects exact duplicates only.
 - Call `add` once per rule, with precise, nonblank text of at most 160 Unicode characters. Line breaks are allowed; there is no line/word limit or overall rule-count cap. Short rules improve clarity and avoid confusing the model.
 - Call `remove` with a listed stable ID when a rule is obsolete or the user asks to remove it. To replace a rule, agree on the replacement, remove the old rule, then add the new one; report any partial failure.
-- Rules survive resume, reload, and compaction in the same session. New sessions and forks do not inherit them. Adds/removals apply to the next model request; removing a rule does not erase historical messages.
+- Rules survive resume, reload, and compaction in the same session. Fresh session IDs and forks do not inherit them. OpenCode intentionally restores stored rules when a deleted session ID is reused. Adds/removals apply to the next model request; removing a rule does not erase historical messages.
 
-Do not substitute edits to AGENTS.md, SYSTEM.md, shared policy, or repository instructions. If this harness does not expose `session_rules` (for example, OpenCode), say session-rule persistence is unavailable and offer the proposed rule in the conversation without claiming it was saved. A separately requested global-policy change requires its own explicit scope and approval.
+Do not substitute edits to AGENTS.md, SYSTEM.md, shared policy, or repository instructions. If this harness does not expose `session_rules`, say session-rule persistence is unavailable and offer the proposed rule in the conversation without claiming it was saved. A separately requested global-policy change requires its own explicit scope and approval.
 
 ## Implement and prove the approved fix
 

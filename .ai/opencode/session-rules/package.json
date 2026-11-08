@@ -1,0 +1,6 @@
+{
+  "name": "local-opencode-session-rules",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./index.js" }
+}
