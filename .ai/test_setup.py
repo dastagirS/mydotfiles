@@ -58,19 +58,19 @@ class SharedSetupTests(unittest.TestCase):
             self.assertFalse((CONFIGURATION_ROOT / "shared/skills" / name).exists())
             self.assertFalse((Path.home() / ".config/opencode/skills" / name).exists())
 
-    def test_dashboard_originals_and_browser_executables_remain_available(self):
+    def test_generic_browser_skill_replaces_the_vendored_cli_skill(self):
+        self.assertTrue((CONFIGURATION_ROOT / "shared/skills/browser/SKILL.md").is_file())
+        for root in [CONFIGURATION_ROOT / "shared/skills", Path.home() / ".pi/agent/skills", Path.home() / ".config/opencode/skills"]:
+            self.assertFalse((root / "agent-browser").exists())
+            self.assertFalse((root / "agent-browser").is_symlink())
+
+    def test_dashboard_originals_remain_available(self):
         images = CONFIGURATION_ROOT / "shared/skills/design/references/dashboard/images"
         originals = list(islice(images.glob("*.png"), DASHBOARD_IMAGES_COUNT + 1))
         self.assertEqual(len(originals), DASHBOARD_IMAGES_COUNT)
         for image in originals:
             with image.open("rb") as stream:
                 self.assertEqual(stream.read(8), b"\x89PNG\r\n\x1a\n")
-        templates = CONFIGURATION_ROOT / "shared/skills/agent-browser/templates"
-        scripts = list(islice(templates.glob("*.sh"), DIRECTORY_COUNT_MAX + 1))
-        self.assertTrue(scripts)
-        self.assertLessEqual(len(scripts), DIRECTORY_COUNT_MAX)
-        for script in scripts:
-            self.assertTrue(script.stat().st_mode & 0o100, f"Browser template lost owner execution: {script.name}")
 
 
 if __name__ == "__main__":

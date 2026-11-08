@@ -19,7 +19,7 @@ Personal Pi coding agent configuration. Shared coding and communication rules ar
 │   │   ├── god/             # /god session toggles + Telegram completion tool
 │   │   └── message-board/   # Parent-owned RPC workers + durable upward reports
 │   ├── skills/              # Agent skills (SKILL.md)
-│   │   ├── agent-browser/
+│   │   ├── browser/
 │   │   ├── grill-with-docs/
 │   │   ├── improve-codebase-architecture/
 │   │   ├── index-knowledge/
