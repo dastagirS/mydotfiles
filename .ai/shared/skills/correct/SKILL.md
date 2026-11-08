@@ -26,15 +26,22 @@ Consider these options in order, without assuming a larger refactor is better:
 2. **Types and schemas:** make the invalid state or mismatched value impossible to express.
 3. **Existing lint or validation:** reject the mistake with a diagnostic explaining the supported alternative. If an existing pattern is widespread, consider preventing new occurrences rather than forcing unrelated migration.
 4. **Behavior tests:** exercise the observable failure, not an implementation detail or a mock that cannot reveal it.
-5. **Instructions:** reserve prose for judgment calls that cannot reasonably be enforced in code.
+5. **Session rules:** reserve prose for judgment calls that cannot reasonably be enforced in code. Keep project/session-specific corrections in the current session, never in global/shared or repository instruction files.
 
 Pick the smallest effective change. Do not add a dependency, redesign adjacent modules, or replace public APIs merely to enforce a preference. Explain briefly why the chosen level works and why a structural alternative is unnecessary or impractical.
 
-## Agree before changing files
+## Agree before changing state
 
 Present the examples, proposed scope, enforcement mechanism, and verification approach. Get explicit approval before implementation unless that exact fix and approach have already been approved. Invoking this skill authorizes investigation, not arbitrary refactoring or commits.
 
-If a correction belongs in shared agent instructions, edit the canonical source rather than generated client files. Avoid restating an enforceable rule in several instruction files. Update an existing rule/enforcement table if the project uses one; do not create mandatory policy bookkeeping for its own sake.
+For an approved prose correction, use `session_rules` when available:
+
+- Call `list` first and follow `nextOffset` through all pages. Check semantic duplicates; the tool rejects exact duplicates only.
+- Call `add` once per rule, with precise, nonblank text of at most 160 Unicode characters. Line breaks are allowed; there is no line/word limit or overall rule-count cap. Short rules improve clarity and avoid confusing the model.
+- Call `remove` with a listed stable ID when a rule is obsolete or the user asks to remove it. To replace a rule, agree on the replacement, remove the old rule, then add the new one; report any partial failure.
+- Rules survive resume, reload, and compaction in the same session. New sessions and forks do not inherit them. Adds/removals apply to the next model request; removing a rule does not erase historical messages.
+
+Do not substitute edits to AGENTS.md, SYSTEM.md, shared policy, or repository instructions. If this harness does not expose `session_rules` (for example, OpenCode), say session-rule persistence is unavailable and offer the proposed rule in the conversation without claiming it was saved. A separately requested global-policy change requires its own explicit scope and approval.
 
 ## Implement and prove the approved fix
 
