@@ -16,7 +16,13 @@
 !/.config/
 /.config/*
 !/.config/ghostty/
+
+# Kitty: track the config and the theme it includes. Kittens, plugins and
+# downloaded themes stay out of the repo.
 !/.config/kitty/
+/.config/kitty/*
+!/.config/kitty/kitty.conf
+!/.config/kitty/current-theme.conf
 !/.config/nvim/
 !/.config/opencode/
 !/.config/starship.toml
