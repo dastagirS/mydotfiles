@@ -25,6 +25,7 @@
 !/.config/kitty/current-theme.conf
 !/.config/nvim/
 !/.config/opencode/
+!/.config/starship/
 !/.config/starship.toml
 
 # Berkeley Mono: allow-list only the installed font file itself, so other
