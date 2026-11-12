@@ -2,7 +2,7 @@
 shell-integration = zsh
 
 #theme
-theme = /home/ichigo/.cache/ambxst/ghostty-theme.conf
+theme = "Kanagawa Dragon"
 
 #window
 window-decoration = false 
