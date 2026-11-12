@@ -27,6 +27,18 @@
 !/.config/opencode/
 !/.config/starship.toml
 
+# Berkeley Mono: allow-list only the installed font file itself, so other
+# font directories (including cloned ones) stay out of the repo.
+!/.local/
+/.local/*
+!/.local/share/
+/.local/share/*
+!/.local/share/fonts/
+/.local/share/fonts/*
+!/.local/share/fonts/berkeley-mono/
+/.local/share/fonts/berkeley-mono/*
+!/.local/share/fonts/berkeley-mono/BerkeleyMonoVariable.woff2
+
 # Flagged by the secret-pattern scan; keep private pending manual review.
 /.config/opencode/service.json
 /.pi/agent/extensions/message-board/integration.test.mjs
