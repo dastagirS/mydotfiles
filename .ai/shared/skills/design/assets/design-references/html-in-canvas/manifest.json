@@ -1,0 +1,79 @@
+{
+  "title": "HTML-in-Canvas reference demos",
+  "artifact": "https://claude.ai/artifact/7cCNqKnoFSoib9SuNLB3vk",
+  "retrieved": "2026-11-16",
+  "selection": "Five smallest of the fifteen demo artifacts linked from The Explainer.",
+  "browser_support": [
+    "Chrome 157+",
+    "Edge 157+",
+    "Claude desktop 5.11492+"
+  ],
+  "unsupported": [
+    "Firefox",
+    "Safari"
+  ],
+  "api_docs": "https://developer.chrome.com/blog/html-in-canvas",
+  "spec": "https://github.com/WICG/html-in-canvas",
+  "demos": [
+    {
+      "name": "Paper Desk",
+      "file": "demos/paper-desk.html",
+      "source": "https://claude.ai/artifact/BKGBk584YpYtxBebEQsYSm",
+      "frame_uuid": "538821f7-7c12-4966-b773-b49e239a0b92",
+      "artifact_version": "1794764780-98d4",
+      "original_bytes": 160818,
+      "original_sha256": "30ebc16b9cb26e6ac67206b6a0a1231be74b8a30e92c2399225a41f29080ada7",
+      "local_bytes": 124017,
+      "local_sha256": "a727cc6f61cad4a62e7dd54fec49358e722747675900d96c08b4834c84250640",
+      "runtime_stripped": true
+    },
+    {
+      "name": "Knitted Page",
+      "file": "demos/knitted-page.html",
+      "source": "https://claude.ai/artifact/Y8uZf2xz48joUiM1nPhxLW",
+      "frame_uuid": "fc25e5e1-3b8e-4493-8b3d-3cc87ea44ae7",
+      "artifact_version": "1794764835-d35c",
+      "original_bytes": 170210,
+      "original_sha256": "c4a08116ab629d83fd9ec0c8f5b111e618809ee616f8a3b7da62d85addec3b93",
+      "local_bytes": 133409,
+      "local_sha256": "a715b2621dca072c9c4b0b4be376768e68d73630d66be97867a293dd5eae9708",
+      "runtime_stripped": true
+    },
+    {
+      "name": "Jelly",
+      "file": "demos/jelly.html",
+      "source": "https://claude.ai/artifact/HGJRkas2J1QTVjctgi5A7V",
+      "frame_uuid": "83b51d5e-a6cc-4e83-81f7-fcc8bd8f138c",
+      "artifact_version": "1794764775-94a3",
+      "original_bytes": 194758,
+      "original_sha256": "aaf3db2cf911ed391b073a2c7bd4663a091bf50c7775baf66e8e1cceb2917d65",
+      "local_bytes": 157957,
+      "local_sha256": "5c191a897e1df913a147533f84a7e3154991d4af6b48dad914ddd80eee7a7b0c",
+      "runtime_stripped": true
+    },
+    {
+      "name": "Exploded View",
+      "file": "demos/exploded-view.html",
+      "source": "https://claude.ai/artifact/CBxLSFEFnojedyQW5L458v",
+      "frame_uuid": "5a9c107d-e887-47b1-8ab9-5dfa32e21e43",
+      "artifact_version": "1794764778-f4a2",
+      "original_bytes": 256322,
+      "original_sha256": "4071ca9c9db7ff45735b6bb08539faa208de6b117347e568f7fd16c405ffbe54",
+      "local_bytes": 219515,
+      "local_sha256": "52d3dee892c552547addfefc3557d666f32c9edc6a8e797aa26581568611ec16",
+      "runtime_stripped": true
+    },
+    {
+      "name": "Ink",
+      "file": "demos/ink.html",
+      "source": "https://claude.ai/artifact/WEmmb18oUbyCSkYyB1JMiB",
+      "frame_uuid": "ecc547a4-d42f-49c8-985d-aea06bdf898c",
+      "artifact_version": "1794764795-e3ce",
+      "original_bytes": 629473,
+      "original_sha256": "52a31e0433a5413f63755fb9ccd90b28ffec9a3305d50c40c2af37cf8e2634d1",
+      "local_bytes": 592672,
+      "local_sha256": "8edc794d2a419dacc0c495347605f946544c420d304f3903effe10301f0a86f2",
+      "runtime_stripped": true
+    }
+  ]
+}

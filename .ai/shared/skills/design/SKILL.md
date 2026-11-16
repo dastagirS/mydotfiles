@@ -1,6 +1,6 @@
 ---
 name: design
-description: "Complete system for building high converting landing pages: intake questions, page structure, layout selection, conversion copywriting, SEO, plus strict visual rules for typography, spacing, corner radius, backgrounds, hero layout, icons, and motion. Use this skill whenever building, editing, styling, reviewing, or writing copy for ANY landing page, marketing site, web UI, page section, component, or prototype, even when the user does not mention design, conversion, tokens, or a design system. Always consult it before choosing page sections, headlines, CTAs, fonts, font sizes, spacing values, border radii, background colors, icons, or transitions."
+description: "Complete system for building high converting landing pages: intake questions, page structure, layout selection, conversion copywriting, SEO, plus strict visual rules for typography, spacing, corner radius, backgrounds, hero layout, icons, and motion. Use this skill whenever building, editing, styling, reviewing, or writing copy for ANY landing page, marketing site, web UI, page section, component, or prototype, even when the user does not mention design, conversion, tokens, or a design system. Always consult it before choosing page sections, headlines, CTAs, fonts, font sizes, spacing values, border radii, background colors, icons, or transitions. Includes dashboards, analytics workspaces, admin and ops interfaces, charts, and data-heavy product UI."
 ---
 
 # Landing Page Design
@@ -15,9 +15,17 @@ This skill has two halves. **Part A** decides what the page says and how it is s
 
 Apply to all web UI work: landing pages, marketing sites, components, dashboards, prototypes, and design reviews. When a rule here conflicts with a framework default, this file wins. When the user's explicit prompt conflicts with a rule, the user wins.
 
-**Dashboard branch.** For dashboards, analytics workspaces and operational overviews, first read [`references/dashboard/README.md`](references/dashboard/README.md), then open the relevant images selected through its gallery. That local branch governs dashboard structure, visualization, component interaction, readable density and restrained/reduced motion where it conflicts with the landing-page rules below. Do not import landing-page sales sections or mandatory reveals into an operational dashboard. Explicit user requirements and higher-priority project instructions still win.
+For canvas-driven expressive UI, use [`assets/design-references/html-in-canvas/README.md`](assets/design-references/html-in-canvas/README.md) as an optional capability reference. It does not override the visual system and does not make canvas necessary for ordinary pages.
 
-**Browser-led references.** For new websites and substantial redesigns, first follow [`references/web-inspiration.md`](references/web-inspiration.md): use browser tools to discover comparable sites through the curated galleries, visit the actual live sites, and extract concrete design lessons before proposing the visual direction. Do not use direct fetching for this research or claim unvisited pages were inspected. Minor UI fixes do not require a new reference tour; user/project constraints and the dashboard branch still take precedence.
+## Step 0 — design research (blocking)
+
+Read [`references/DESIGN-RESEARCH.md`](references/DESIGN-RESEARCH.md) in full before proposing a layout, palette, or code. Follow its branch router and collect the evidence it requires.
+
+- **Web and marketing work:** at least 3 live URLs visited through the `browser` skill, with one concrete lesson each.
+- **Dashboard, analytics, and operational work:** at least 2 local reference images opened with the read tool, with one structural rule borrowed.
+- **Small component or copy tweak:** the matching section only, with one line stating why no research tour is needed.
+
+A missing browser backend is not a reason to skip. Load the `browser` skill, attempt its documented availability check, then ask the user for permission or an alternative. Never substitute direct fetching. Only an explicit user waiver allows proceeding without the required research; record that waiver in one line.
 
 **Companion skill.** For upgrading an *existing* site rather than building a new one, use `redesign-existing-projects` ([github.com/elayadesign/redesign-skill](https://github.com/elayadesign/redesign-skill)). It diagnoses generic patterns and defers to this file for every concrete value.
 
@@ -51,7 +59,7 @@ Gather these before designing or writing. Ask only for what is missing, and ask 
 - Design direction: minimal editorial, playful 3D, glass UI
 - Mobile priority?
 
-If the user cannot answer, make a reasonable assumption, state it in one line, and continue. Do not stall the build.
+If the user cannot answer, state an assumption in one line and continue. Do not stall the build.
 
 ## A2. Page structure
 
@@ -121,6 +129,7 @@ Note: the copy rules in B1 still apply. No hyphens inside sentences, no orphaned
 
 Work section by section, in this order:
 
+0. Satisfy Step 0 and record what you are borrowing.
 1. Hero
 2. Benefits
 3. How it works
@@ -134,7 +143,7 @@ Never rebuild the whole page on each iteration. Section by section keeps control
 
 **Do not index** ad only campaign pages or highly time bound offers. Use `noindex` or keep them behind a non indexed path.
 
-**Do index** evergreen offers and pages where search intent matches the promise. Add a clear title and meta description, internal links from the homepage and feature pages, and the FAQ in plain question and answer form for AEO. Add FAQ schema if appropriate.
+**Do index** evergreen offers and pages where search intent matches the promise. Add a clear title and meta description, internal links from the homepage and feature pages, and the FAQ in plain question and answer form for AEO. Add FAQ schema on indexed pages that include an FAQ.
 
 ## A8. Pitfalls
 
@@ -360,6 +369,7 @@ Every landing page includes one large type section stating the core benefit or t
 
 When generating a landing page from scratch, return these in order before writing code:
 
+0. **References used** — branch, visited URLs or dashboard image names, and one borrowed rule. If no branch applied, state why in one line.
 1. **Page outline** — sections and their order
 2. **Hero copy** — headline, subheadline, CTA, proof line
 3. **Benefits** — three to five outcome driven bullets
@@ -375,6 +385,7 @@ Then build section by section per A6.
 # Quick checklist
 
 **Strategy**
+- [ ] Step 0 research completed and cited (web URLs or dashboard image names)
 - [ ] One offer, one audience, one primary action
 - [ ] No competing CTAs above the fold
 - [ ] Specific numbers instead of vague verbs
@@ -392,6 +403,7 @@ Then build section by section per A6.
 - [ ] Hero heading and subheading capped at 680px with meaningful line breaks
 - [ ] Icons from Phosphor, Solar, or Iconamoon
 - [ ] Every transition uses the B7 base curve, scroll reveals use IntersectionObserver
+- [ ] If using HTML-in-Canvas: feature detection, DOM fallback, keyboard and selection preserved
 - [ ] Tagline reveal section present, minimum two lines, words activate one at a time on scroll
 
 **Content and ship**

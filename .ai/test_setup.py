@@ -1,6 +1,9 @@
 import importlib.util
+import hashlib
+import json
 from itertools import islice
 from pathlib import Path
+import re
 import unittest
 
 CONFIGURATION_ROOT = Path(__file__).resolve().parent
@@ -65,12 +68,52 @@ class SharedSetupTests(unittest.TestCase):
             self.assertFalse((root / "agent-browser").is_symlink())
 
     def test_dashboard_originals_remain_available(self):
-        images = CONFIGURATION_ROOT / "shared/skills/design/references/dashboard/images"
+        images = CONFIGURATION_ROOT / "shared/skills/design/assets/design-references/dashboard"
         originals = list(islice(images.glob("*.png"), DASHBOARD_IMAGES_COUNT + 1))
         self.assertEqual(len(originals), DASHBOARD_IMAGES_COUNT)
         for image in originals:
             with image.open("rb") as stream:
                 self.assertEqual(stream.read(8), b"\x89PNG\r\n\x1a\n")
+        references = CONFIGURATION_ROOT / "shared/skills/design/references"
+        self.assertTrue((references / "DESIGN-RESEARCH.md").is_file())
+        self.assertFalse((references / "dashboard").exists())
+        self.assertFalse((references / "web-inspiration.md").exists())
+
+    def test_design_reference_links_resolve(self):
+        skill = CONFIGURATION_ROOT / "shared/skills/design"
+        for document in [
+            skill / "SKILL.md",
+            skill / "references/DESIGN-RESEARCH.md",
+            skill / "assets/design-references/html-in-canvas/README.md",
+        ]:
+            for target in re.findall(r"\]\(([^)]+)\)", document.read_text()):
+                if target.startswith(("http://", "https://", "#")):
+                    continue
+                with self.subTest(document=document.name, target=target):
+                    self.assertTrue((document.parent / target).resolve().exists())
+
+    def test_html_in_canvas_reference_set(self):
+        root = CONFIGURATION_ROOT / "shared/skills/design/assets/design-references/html-in-canvas"
+        manifest = json.loads((root / "manifest.json").read_text())
+        self.assertEqual(len(manifest["demos"]), 5)
+        self.assertEqual(
+            {demo["name"] for demo in manifest["demos"]},
+            {"Paper Desk", "Knitted Page", "Jelly", "Exploded View", "Ink"},
+        )
+        for demo in manifest["demos"]:
+            path = root / demo["file"]
+            with self.subTest(demo=demo["name"]):
+                self.assertTrue(path.is_file())
+                content = path.read_text(encoding="utf-8")
+                self.assertTrue(content.startswith("<!doctype html>"))
+                self.assertNotIn("frame-runtime", content)
+                self.assertNotIn("__FRAME_PREAMBLE", content)
+                self.assertNotRegex(content, r"<script\b[^>]*\bsrc=")
+                self.assertNotIn("document.cookie", content)
+                self.assertNotIn("fonts.googleapis.com", content)
+                self.assertNotIn("fonts.gstatic.com", content)
+                self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), demo["local_sha256"])
+                self.assertEqual(path.stat().st_size, demo["local_bytes"])
 
 
 if __name__ == "__main__":
