@@ -94,6 +94,14 @@ When writing code:
 
 When the user requests a commit, run the following workflow in the current session. That request authorizes committing once the gates pass; do not add a routine human-approval step. Subagents may assist only when explicitly delegated; do not delegate the code review itself. A review-only request does not authorize a commit.
 
+### Commit Messages
+
+Format: `<type>(<scope>): <description>`
+
+- `<type>`: `feat`, `chore`, `refactor`, or `perf`.
+- `<scope>`: affected package in a monorepo; omit outside monorepos.
+- `<description>`: short, at most three lines including any body, lower case, no trailing period.
+
 1. **Static analysis:** run the relevant existing lint, type, compiler/build, and formatting checks against the intended changes. Do not install new tooling or silently apply unrelated fixes.
 2. **Verification:** run focused tests and exercise the actual behavior where practical. Follow the regression-testing rules above. Distinguish real-application evidence from unit tests, mocks, and static inspection; state what remains unverified.
 3. **Code-review skill:** use the code-review skill in the current session to review the exact intended commit diff, affected files, and relevant callers/tests. Do not infer safety from the diff alone. Substantiate findings with severity, file/line references, the concrete failure scenario and impact, and supporting evidence. Separate confirmed issues from unverified risks.
