@@ -5,7 +5,7 @@ import { LIMITS } from './protocol.mjs';
 const DISPLAY_CHARS_MAX = LIMITS.response_bytes * 2;
 const CONTENT_BLOCKS_MAX = 128;
 const JOB_ID_CHARS = 8;
-const ACTIONS = new Set(['init', 'delegate', 'instruct', 'respond', 'ack', 'status', 'retry', 'reconnect', 'cancel', 'stop']);
+const ACTIONS = new Set(['delegate', 'instruct', 'respond', 'ack', 'status', 'retry', 'reconnect', 'cancel', 'stop']);
 const KINDS = new Set(['progress', 'needs_decision', 'result', 'failed']);
 const FALLBACK = 'Result received · expand for details';
 
@@ -56,7 +56,6 @@ function summary(action: unknown, details: Record<string, unknown>): string {
     const warnings = `${failed ? `${failed} failed · ` : ''}${interrupted ? `${interrupted} interrupted · ` : ''}`;
     return `${details.jobs.length} jobs · ${warnings}${working} working · ${cancelled} cancelled · ${pending} reports pending`;
   }
-  if (action === 'init' && details.initialized === true) return 'Board initialized · delivery paused';
   if (action === 'reconnect' && details.reconnected === true) return 'Board reconnected';
   if (action === 'stop' && details.stopping === true) return 'Board stop requested';
   if (action === 'retry' && details.retryEnabled === true) return 'Delivery retry enabled';

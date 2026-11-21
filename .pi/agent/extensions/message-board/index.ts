@@ -60,7 +60,7 @@ export default function messageBoard(pi: ExtensionAPI): void {
   let inflight: string[] = [];
   let waiting: BoardReport[] = [];
   let deliveryEnabled = false;
-  let controlRevision = 0;
+  let attaching: Promise<void> | undefined;
   let pendingCount: number | undefined;
   let subscriptionConnected = false;
   let deliveryStalled = false;
@@ -90,7 +90,7 @@ export default function messageBoard(pi: ExtensionAPI): void {
         if (captured !== generation || connection !== active || !context || controller?.signal.aborted) return;
         waiting = result.events;
       }
-      // Pause can arrive while a claim is in flight. Keep its lease, but never inject it until continued.
+      // Stop can arrive while a claim is in flight. Keep its lease for durable recovery; never inject it.
       if (!deliveryEnabled) { renderStatus(); return; }
       if (!waiting.length) {
         const status = await request(active, 'status', {}, { signal: controller.signal });
@@ -133,7 +133,10 @@ export default function messageBoard(pi: ExtensionAPI): void {
     controller?.abort();
     controller = new AbortController();
     consumerId = randomUUID();
+    deliveryEnabled = true;
+    renderStatus();
     const active = connection;
+    void pump();
     const signal = controller.signal;
     void (async () => {
       for (let attempt = 0; attempt < LIMITS.subscription_attempts && !signal.aborted; attempt += 1) {
@@ -160,23 +163,31 @@ export default function messageBoard(pi: ExtensionAPI): void {
       }
     })();
   }
-  async function execute(action: string, parameters: Record<string, unknown>, callId: string, ctx: ExtensionContext): Promise<unknown> {
-    if (action === 'init') {
-      const cwd = realpathSync(typeof parameters.cwd === 'string' ? parameters.cwd : ctx.cwd);
+  function findBinding(ctx: ExtensionContext): { parentId: string; cwd: string } | undefined {
+    const branch = ctx.sessionManager.getBranch();
+    if (branch.length > BRANCH_ENTRIES_MAX) return undefined;
+    const binding = branch.findLast(entry => entry.type === 'custom' && entry.customType === BINDING_TYPE);
+    const data = binding && 'data' in binding ? binding.data as { parentId?: string; cwd?: string } : undefined;
+    return data?.parentId === ctx.sessionManager.getSessionId() && typeof data.cwd === 'string'
+      ? { parentId: data.parentId, cwd: data.cwd }
+      : undefined;
+  }
+  async function ensureAttached(ctx: ExtensionContext): Promise<void> {
+    if (connection) return;
+    if (attaching) return attaching;
+    attaching = (async () => {
+      const binding = findBinding(ctx);
+      if (binding) { await attach(ctx, binding.cwd); return; }
+      const cwd = realpathSync(ctx.cwd);
       if (!statSync(cwd).isDirectory()) throw new Error('Board cwd must be an existing directory');
-      if (connection) throw new Error('This session already has a board; use its existing connection or reconnect');
-      await attach(ctx, cwd);
       pi.appendEntry(BINDING_TYPE, { parentId: ctx.sessionManager.getSessionId(), cwd });
-      return { initialized: true, parentId: ctx.sessionManager.getSessionId(), cwd, path: connection!.path };
-    }
-    if (!connection) {
-      const branch = ctx.sessionManager.getBranch();
-      if (branch.length > BRANCH_ENTRIES_MAX) throw new Error('Session too large to restore board binding');
-      const binding = branch.findLast(entry => entry.type === 'custom' && entry.customType === BINDING_TYPE);
-      const data = binding && 'data' in binding ? binding.data as { parentId?: string; cwd?: string } : undefined;
-      if (!data || data.parentId !== ctx.sessionManager.getSessionId() || typeof data.cwd !== 'string') throw new Error('Initialize a board in this parent session first');
-      await attach(ctx, data.cwd);
-    }
+      await attach(ctx, cwd);
+    })();
+    try { await attaching; }
+    finally { attaching = undefined; }
+  }
+  async function execute(action: string, parameters: Record<string, unknown>, callId: string, ctx: ExtensionContext): Promise<unknown> {
+    await ensureAttached(ctx);
     if (action === 'reconnect') {
       const cwd = connection!.configuration.cwd;
       generation += 1;
@@ -219,7 +230,6 @@ export default function messageBoard(pi: ExtensionAPI): void {
       inflight = [];
       waiting = [];
       deliveryEnabled = false;
-      controlRevision += 1;
       pendingCount = undefined;
       subscriptionConnected = false;
       deliveryStalled = false;
@@ -232,10 +242,10 @@ export default function messageBoard(pi: ExtensionAPI): void {
   pi.registerTool({
     name: 'subagent', label: 'Subagent board',
     ...boardToolRenderers('subagent'),
-    description: 'Parent-only RPC delegation and durable upward message board. Report delivery defaults to paused; only the human commands /subagent:continue and /subagent:pause control it. Never poll for queued reports while paused. Initialize with an existing cwd; no workspace creation. delegate/instruct need task, scope, acceptance. Delegation returns immediately. For Docket work, claim a ticket first and pass its explicit ticketId; workers cannot be retargeted. respond uses eventId and answer; ack uses delivered ids. status inspects state; cancel stops one job, stop stops this board. Never delegate code review. Inspect uncertain outcomes before retrying.',
+    description: 'Parent-only RPC delegation and durable upward message board. The board initializes automatically on first use and report delivery is always live; no init, continue, or pause step. delegate/instruct need task, scope, acceptance. Delegation returns immediately. For Docket work, claim a ticket first and pass its explicit ticketId; workers cannot be retargeted. respond uses eventId and answer; ack uses delivered ids. status inspects state; cancel stops one job, stop stops this board. Never delegate code review. Inspect uncertain outcomes before retrying.',
     exposure: 'model-only',
     parameters: Type.Object({
-      action: Type.Union(['init', 'delegate', 'instruct', 'respond', 'ack', 'status', 'retry', 'reconnect', 'cancel', 'stop'].map(value => Type.Literal(value))),
+      action: Type.Union(['delegate', 'instruct', 'respond', 'ack', 'status', 'retry', 'reconnect', 'cancel', 'stop'].map(value => Type.Literal(value))),
       cwd: Type.Optional(Type.String({ minLength: 1, maxLength: 4096 })),
       task: Type.Optional(Type.String({ minLength: 1, maxLength: LIMITS.task })),
       scope: Type.Optional(Type.Array(Type.String({ minLength: 1, maxLength: 1000 }), { minItems: 1, maxItems: 32 })),
@@ -253,38 +263,13 @@ export default function messageBoard(pi: ExtensionAPI): void {
       return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result };
     },
   });
-  for (const action of ['continue', 'pause'] as const) {
-    pi.registerCommand(`subagent:${action}`, {
-      description: action === 'continue' ? 'Enable board delivery until explicitly paused' : 'Pause further board delivery without cancelling workers or the current response',
-      handler: async (arguments_, ctx) => {
-        if (arguments_.trim()) { ctx.ui.notify(`Use /subagent:${action} without arguments.`, 'warning'); return; }
-        const requestedRevision = ++controlRevision;
-        const requestedGeneration = generation;
-        if (action === 'pause') {
-          deliveryEnabled = false;
-          renderStatus();
-          return;
-        }
-        try {
-          if (!connection) await execute('status', {}, randomUUID(), ctx);
-          // Restoring a board can await I/O; a newer pause or session transition must win.
-          if (requestedRevision !== controlRevision || requestedGeneration !== generation) return;
-          deliveryEnabled = true;
-          renderStatus();
-          void pump();
-        } catch (error) {
-          if (requestedRevision === controlRevision && requestedGeneration === generation) ctx.ui.notify(error instanceof Error ? error.message : 'Board could not continue', 'error');
-        }
-      },
-    });
-  }
   pi.registerCommand('board', {
-    description: 'Initialize a paused board in the current directory, inspect agents/status, reconnect, or stop',
+    description: 'Inspect agents/status, reconnect, or stop the worker board',
     handler: async (arguments_, ctx) => {
       const action = arguments_.trim() || 'status';
       if (action === 'agents') { await agentDashboard.showRoster(); return; }
-      if (!['init', 'status', 'reconnect', 'stop'].includes(action)) {
-        ctx.ui.notify('Use /board init, /board agents, /board status, /board reconnect, /board stop. Init uses the current directory and launches no workers.', 'warning');
+      if (!['status', 'reconnect', 'stop'].includes(action)) {
+        ctx.ui.notify('Use /board agents, /board status, /board reconnect, /board stop.', 'warning');
         return;
       }
       try { ctx.ui.notify(JSON.stringify(await execute(action, {}, randomUUID(), ctx)), 'info'); }
@@ -299,12 +284,9 @@ export default function messageBoard(pi: ExtensionAPI): void {
     generation += 1;
     deliveryEnabled = false;
     renderStatus();
-    const branch = ctx.sessionManager.getBranch();
-    if (branch.length > BRANCH_ENTRIES_MAX) return;
-    const binding = branch.findLast(entry => entry.type === 'custom' && entry.customType === BINDING_TYPE);
-    const data = binding && 'data' in binding ? binding.data as { parentId?: string; cwd?: string } : undefined;
-    if (data?.parentId === ctx.sessionManager.getSessionId() && typeof data.cwd === 'string') {
-      try { await attach(ctx, data.cwd); }
+    const binding = findBinding(ctx);
+    if (binding) {
+      try { await attach(ctx, binding.cwd); }
       catch { renderStatus(); ctx.ui.notify('Board could not reconnect. Its stored reports were not removed.', 'warning'); }
     }
   });
@@ -319,6 +301,7 @@ export default function messageBoard(pi: ExtensionAPI): void {
     inflight = [];
     waiting = [];
     deliveryEnabled = false;
+    attaching = undefined;
     pendingCount = undefined;
     subscriptionConnected = false;
     deliveryStalled = false;

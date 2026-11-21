@@ -49,7 +49,7 @@ function lines(component, width = 100) { return component.render(width).map(stri
 
 const jobId = '3d711173-9c88-41d1-af04-4366b7688937';
 const args = { action: 'status', jobId, task: 'PRIVATE_TASK_SENTINEL', scope: ['/private/source'], answer: 'PRIVATE_ANSWER_SENTINEL' };
-const status = { jobs: Array.from({ length: 32 }, (_, index) => ({ id: `job-${index}`, state: 'cancelled', stage: 'result_reported', taskPreview: 'PRIVATE_TASK_SENTINEL', cwdPreview: '/private/source' })), pending: 0, unresolved: [], deliveryMode: 'paused' };
+const status = { jobs: Array.from({ length: 32 }, (_, index) => ({ id: `job-${index}`, state: 'cancelled', stage: 'result_reported', taskPreview: 'PRIVATE_TASK_SENTINEL', cwdPreview: '/private/source' })), pending: 0, unresolved: [], deliveryMode: 'running' };
 
 test('registered subagent status stays two content lines; native expansion preserves complete arguments and results', async () => {
   const tool = (await definitions()).get('subagent');
@@ -72,7 +72,6 @@ test('both roles register compact renderers; each action reflects acceptance rat
   const tools = await definitions();
   const parent = tools.get('subagent');
   for (const [action, details, expected] of [
-    ['init', { initialized: true }, /initialized.*paused/],
     ['delegate', { accepted: true, jobId, revision: 1 }, /accepted/],
     ['delegate', { accepted: true, duplicate: true, jobId, revision: 1 }, /existing task/],
     ['instruct', { accepted: true, jobId, revision: 2 }, /accepted/],
