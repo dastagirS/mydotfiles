@@ -4,72 +4,30 @@ How to research before building: where to look, how to read each kind of referen
 
 ## Contents
 
-- The design-taste MCP (first choice)
-- 21st.dev (second choice)
-- The bucket, directly
-- Public galleries
+- The design-taste MCP (private)
+- Public libraries
 - Font sources
 - Reading a reference
 - Evidence bar
-- Dashboard reference catalog
-- HTML-in-canvas demos
+- Dashboard archetypes
+- Canvas-driven effects
 - Limits
 
-## The design-taste MCP (first choice)
+## The design-taste MCP
 
-**If the `design_taste` MCP is available, use it before anything else.** It returns components and designs that have already been found, reviewed and cherry picked, several at a time, so directions can be compared side by side before committing to one.
+One more gallery, and it is private. **If it is available, use it first**: it returns components and designs already found, reviewed and cherry picked, several at a time, so directions can be compared side by side. **If it is not available, carry on with the public libraries below** — nothing about this skill depends on it.
 
-**This MCP is private**: not published, not installable from a registry, not available to other people. Its contents stay on this machine, never quoted or handed over as public material.
-
-**It ships its own skill.** Read that before using it: it explains the tools, the gated workflow, and exactly what the library holds. Tool mechanics belong there, not here.
+It ships its own skill. Read that for its tools and for what the library holds; tool mechanics belong there, not here.
 
 A reference taken from it counts toward the [evidence bar](#evidence-bar) like any other: one recorded mechanic per reference.
 
-## 21st.dev (second choice)
+## Public libraries
 
-```
-https://21st.dev/?qt={query}
-```
+Everything below is public and needs no setup, so this is where research goes whenever the private MCP is absent.
 
-Swap `{query}` for the term you are building and open the results through the `browser` skill. This is where the library's captures came from.
+- [21st.dev](https://21st.dev/?qt={query}) — open first when you already know the term you are building: swap `{query}` in that URL and read the results through the `browser` skill. This is where the library's captures came from, and the components come with real source, which beats a thumbnail.
 
-## The bucket, directly
-
-When the MCP is unavailable, the same material is readable straight from the R2 bucket `design-taste`, filed by section: `heroes/`, `footers/`, `dashboards/`, `charts/`, `carousels/`, `timelines/`, `galleries/`, `features/`, `transitions/`, `text-effects/`, `lists/`, `stats/`, `cta/`, `inputs/`, `interactive/`, `accordions/`, `backgrounds/`, `ecommerce/`, and `sites/` for whole sites.
-
-A capture is slugged `<provider>--<slug>`; a replica has no `--`, and is the only kind that records measured motion in its `design.json`. The code is readable either way, so this beats guessing from a screenshot.
-
-```bash
-rclone lsf -R dt:design-taste/heroes/ --s3-no-check-bucket      # what exists
-rclone copy dt:design-taste/heroes/<slug>/ /tmp/ref/ --s3-no-check-bucket
-```
-
-## Connecting to the bucket
-
-The bucket is private. Credentials live in `~/.config/rclone-design-taste.env`; map them onto an rclone remote named `dt`:
-
-```bash
-set -a; . ~/.config/rclone-design-taste.env; set +a
-export RCLONE_CONFIG_DT_TYPE=s3 RCLONE_CONFIG_DT_PROVIDER=Cloudflare \
-  RCLONE_CONFIG_DT_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" \
-  RCLONE_CONFIG_DT_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY" \
-  RCLONE_CONFIG_DT_ENDPOINT="https://b7fcc408f1682a6604e54432dedd176f.r2.cloudflarestorage.com" \
-  RCLONE_CONFIG_DT_REGION=auto RCLONE_CONFIG_DT_NO_CHECK_BUCKET=true
-rclone lsf dt:design-taste/ --s3-no-check-bucket
-```
-
-Pull only what the task needs, open it locally, and delete the temporary copy when the task ends. Binaries stay out of the skill directory.
-
-Asset paths used by this skill:
-
-| What | Path in the bucket |
-|---|---|
-| Dashboard reference screenshots, 14 with `manifest.json` | `skill-assets/design/assets/design-references/dashboard/` |
-| HTML-in-canvas demos, 5 with `README.md` and `manifest.json` | `skill-assets/design/assets/design-references/html-in-canvas/` |
-
-## Public galleries
-
-Showcases and section libraries, for directions the private library does not cover. These are discovery sources, not endorsements of suitability, speed, accessibility or asset rights — several are rank-driven and favour novelty over usability.
+The galleries and section libraries follow. They are discovery sources, not endorsements of suitability, speed, accessibility or asset rights — several are rank-driven and favour novelty over usability.
 
 **Whole sites**
 
@@ -173,13 +131,11 @@ Read four to six frames across the clip, plus a contact sheet when the sequence 
 
 An unavailable browser is not a waiver. Load the `browser` skill, run its availability check, and ask for an alternative. Only the user can waive the research stage; record that in one line.
 
-## Dashboard reference catalog
+## Dashboard archetypes
 
-Fourteen screenshots supplied by the user, now at `skill-assets/design/assets/design-references/dashboard/` with dimensions, sizes and hashes in its `manifest.json`. They establish visual preferences only: no measured behaviour, no verified figures, no reusable identities.
+Fourteen dashboards reviewed earlier, recorded here as judgments rather than files: what to borrow from each arrangement and what it does not prove. No screenshot, measured behaviour, verified figure or identity comes with this skill.
 
-Open the relevant images with the read tool before borrowing a treatment; do not design from this table alone.
-
-| ID | File | Borrow | Do not |
+| ID | Arrangement | Borrow | Do not |
 |---|---|---|---|
 | 01 | `01-light-analytics-workspace.png` | three-zone frame: navigation, broad plot, contextual rail; one trend with a column comparison | combine units without axes; import portraits or figures |
 | 02 | `02-freelance-income-workspace.png` | one featured mark with its exact value bubble; supporting records beside it | highlight everything; treat a drawn tooltip as proof of working hover |
@@ -196,11 +152,9 @@ Open the relevant images with the read tool before borrowing a treatment; do not
 | 13 | `13-chart-card-catalog.png` | variety in plot size and annotation | infer legibility or behaviour from thumbnails |
 | 14 | `14-chart-variation-catalog.png` | several approaches to part-to-whole and comparison | assume every circular mark means the same thing |
 
-## HTML-in-canvas demos
+## Canvas-driven effects
 
-Five small demos at `skill-assets/design/assets/design-references/html-in-canvas/`, with a `README.md` and `manifest.json`: Paper Desk, Knitted Page, Jelly, Exploded View, Ink.
-
-They are a capability reference for canvas-driven effects, not a style to copy. Fetch them, open and inspect them rather than reading whole files into context. Any use requires feature detection and a working DOM fallback. No licence was found for these files; treat them as local reference material, not a licensed asset pack.
+Five techniques worth knowing are possible in a single canvas: paper with fibre and shadow, a knitted surface, a jelly body, an exploded view, and ink that bleeds. They are a capability reference, not a style to copy, and nothing of them ships with this skill. Any use requires feature detection and a working DOM fallback.
 
 ## Limits
 
