@@ -1,0 +1,269 @@
+#!/usr/bin/env bash
+# macOS-only. Turns the Dock off and restores the settings that were there before.
+# Dock.app cannot be unloaded: it is SIP-protected and launchd restarts it within a second.
+# "off" writes a 1000-second reveal delay and then SIGSTOPs Dock.app, because a large
+# autohide-delay no longer keeps the pointer from revealing it. A stopped process cannot run
+# its edge detection, so the freeze is what makes the Dock unreachable. "off --soft" skips it.
+set -euo pipefail
+
+DOCK_DOMAIN=com.apple.dock
+NEAR_INFINITE_DELAY_SECONDS=1000
+ANIMATION_TIME_MODIFIER=0
+MANAGED_KEYS="autohide autohide-delay autohide-time-modifier"
+STATE_DIRECTORY="$HOME/Library/Application Support/dockctl"
+STATE_FILE="$STATE_DIRECTORY/state.properties"
+DOCK_RESTART_TIMEOUT_SECONDS=5
+
+usage() {
+  cat >&2 <<'EOF'
+usage: dockctl <command>
+
+commands:
+  off      hide the Dock completely; freezes Dock.app so the edge cannot reveal it
+  off --soft  hidden by preference only; leaves Dock.app running (Mission Control works)
+  on       restore the settings saved by the first "off"
+  status   report the current Dock mode; changes nothing
+EOF
+  exit "${1:-1}"
+}
+
+require_macos() {
+  [[ "$(uname -s)" == Darwin ]] || { printf 'dockctl: macOS only\n' >&2; exit 1; }
+}
+
+key_value() {  # value of a Dock key; fails when the key is absent (absence means "use default")
+  defaults read "$DOCK_DOMAIN" "$1" 2>/dev/null
+}
+
+key_type() {
+  defaults read-type "$DOCK_DOMAIN" "$1" 2>/dev/null | awk '{print $NF}'
+}
+
+type_flag() {
+  case "$1" in
+    boolean) printf '%s' -bool ;;
+    integer) printf '%s' -int ;;
+    float) printf '%s' -float ;;
+    string) printf '%s' -string ;;
+    *) printf 'dockctl: refusing to restore unsupported type "%s"\n' "$1" >&2; return 2 ;;
+  esac
+}
+
+verify_value() {  # $1 key, $2 value the readback must equal
+  local actual
+  actual=$(key_value "$1") || { printf 'dockctl: %s is unreadable after write\n' "$1" >&2; exit 2; }
+  [[ "$actual" == "$2" ]] || {
+    printf 'dockctl: %s reads "%s" after write, expected "%s"\n' "$1" "$actual" "$2" >&2
+    exit 2
+  }
+}
+
+write_literal() {  # $1 type, $2 stored value; "defaults -bool" accepts only true/false/yes/no
+  case "$1" in
+    boolean)
+      case "$2" in
+        1) printf '%s' true ;;
+        0) printf '%s' false ;;
+        *) printf '%s' "$2" ;;
+      esac
+      ;;
+    *) printf '%s' "$2" ;;
+  esac
+}
+
+set_key() {  # $1 key, $2 type, $3 value, $4 expected readback
+  local flag literal
+  [[ -n "$2" && -n "$3" ]] || {
+    printf 'dockctl: %s has no saved type or value in %s\n' "$1" "$STATE_FILE" >&2
+    exit 2
+  }
+  flag=$(type_flag "$2") || exit 2
+  literal=$(write_literal "$2" "$3")
+  defaults write "$DOCK_DOMAIN" "$1" "$flag" "$literal"
+  verify_value "$1" "$4"
+}
+
+delete_key() {  # restores "key was never set", which is not the same as setting it to a default
+  defaults delete "$DOCK_DOMAIN" "$1" 2>/dev/null || true
+  if key_value "$1" >/dev/null; then
+    printf 'dockctl: %s is still set after delete\n' "$1" >&2
+    exit 2
+  fi
+}
+
+restart_dock() {
+  local previous current ticks=0
+  local limit=$(( DOCK_RESTART_TIMEOUT_SECONDS * 10 ))
+  # Waiting for the old pid to disappear is not enough: it lingers while it shuts down, and a
+  # freeze applied to it would leave the replacement Dock running and visible. Wait for a new pid.
+  previous=$(dock_pid) || previous=""
+  killall Dock 2>/dev/null || true
+  while :; do
+    current=$(dock_pid) || current=""
+    if [[ -n "$current" && "$current" != "$previous" ]]; then
+      return 0
+    fi
+    if (( ticks >= limit )); then
+      # Settings are already saved, so the next login or manual "dockctl on" recovers.
+      printf 'dockctl: Dock did not restart within %ss; settings are saved\n' \
+        "$DOCK_RESTART_TIMEOUT_SECONDS" >&2
+      return 0
+    fi
+    sleep 0.1
+    ticks=$(( ticks + 1 ))
+  done
+}
+
+dock_pid() {
+  pgrep -x Dock | head -1
+}
+
+dock_is_frozen() {
+  local pid state
+  pid=$(dock_pid) || return 1
+  state=$(ps -o stat= -p "$pid" 2>/dev/null) || return 1
+  [[ "$state" == *T* ]]
+}
+
+thaw_dock() {  # SIGTERM and new preferences only take effect once a stopped process resumes
+  local pid
+  pid=$(dock_pid) || return 0
+  kill -CONT "$pid" 2>/dev/null || true
+}
+
+freeze_dock() {
+  local pid ticks=0
+  local limit=$(( DOCK_RESTART_TIMEOUT_SECONDS * 10 ))
+  pid=$(dock_pid) || { printf 'dockctl: no Dock process to freeze\n' >&2; exit 2; }
+  kill -STOP "$pid"
+  while ! dock_is_frozen; do
+    if (( ticks >= limit )); then
+      printf 'dockctl: Dock did not stop\n' >&2
+      exit 2
+    fi
+    sleep 0.1
+    ticks=$(( ticks + 1 ))
+  done
+}
+
+state_lookup() {  # $1 is "<key>.<field>" or "captured_at"; prints the stored value
+  local line
+  line=$(grep -F "$1=" "$STATE_FILE" | head -1) || true
+  printf '%s' "${line#*=}"
+}
+
+capture_state() {
+  mkdir -p "$STATE_DIRECTORY" || {
+    printf 'dockctl: cannot create %s\n' "$STATE_DIRECTORY" >&2
+    exit 2
+  }
+  local temporary="$STATE_FILE.$$"
+  {
+    printf 'version=1\n'
+    printf 'captured_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    local key value type
+    for key in $MANAGED_KEYS; do
+      if value=$(key_value "$key"); then
+        type=$(key_type "$key")
+        printf '%s.present=1\n%s.type=%s\n%s.value=%s\n' "$key" "$key" "$type" "$key" "$value"
+      else
+        printf '%s.present=0\n' "$key"
+      fi
+    done
+  } >"$temporary"
+  mv -f "$temporary" "$STATE_FILE"
+}
+
+dock_mode() {
+  local autohide
+  if ! autohide=$(key_value autohide) || [[ "$autohide" != 1 ]]; then
+    printf 'visible'
+    return
+  fi
+  local delay
+  if delay=$(key_value autohide-delay) &&
+    awk -v delay="$delay" -v limit="$NEAR_INFINITE_DELAY_SECONDS" 'BEGIN { exit !(delay >= limit) }'; then
+    if dock_is_frozen; then
+      printf 'never appears (frozen)'
+    else
+      printf 'never appears (delay only)'
+    fi
+    return
+  fi
+  printf 'auto-hide'
+}
+
+command_off() {  # $1 is hard or soft
+  local strength="$1"
+  if [[ -f "$STATE_FILE" ]]; then
+    printf 'dockctl: keeping the settings first saved at %s\n' "$(state_lookup captured_at)"
+  else
+    capture_state
+  fi
+  set_key autohide boolean true 1
+  set_key autohide-delay integer "$NEAR_INFINITE_DELAY_SECONDS" "$NEAR_INFINITE_DELAY_SECONDS"
+  set_key autohide-time-modifier float "$ANIMATION_TIME_MODIFIER" "$ANIMATION_TIME_MODIFIER"
+  thaw_dock
+  restart_dock
+  if [[ "$strength" == hard ]]; then
+    freeze_dock
+  fi
+  command_status
+  if [[ "$strength" == hard ]]; then
+    printf 'Mission Control, Launchpad and Dock clicks stop working while frozen; reboot or "dockctl on" restores them.\n'
+  fi
+  printf 'Minimized windows live in the Dock: use Cmd+H, not Cmd+M.\n'
+}
+
+command_on() {
+  [[ -f "$STATE_FILE" ]] || {
+    printf 'dockctl: nothing saved; the Dock is already at its original settings\n' >&2
+    exit 1
+  }
+  local captured_at key present type value
+  captured_at=$(state_lookup captured_at)
+  for key in $MANAGED_KEYS; do
+    present=$(state_lookup "$key.present")
+    if [[ "$present" != 0 && "$present" != 1 ]]; then
+      printf 'dockctl: %s has no saved state in %s\n' "$key" "$STATE_FILE" >&2
+      exit 2
+    fi
+    if [[ "$present" == 1 ]]; then
+      type=$(state_lookup "$key.type")
+      value=$(state_lookup "$key.value")
+      set_key "$key" "$type" "$value" "$value"
+    else
+      delete_key "$key"
+    fi
+  done
+  rm -f "$STATE_FILE"
+  thaw_dock
+  restart_dock
+  command_status
+  printf 'Restored the settings saved at %s.\n' "$captured_at"
+}
+
+command_status() {
+  printf 'Dock: %s\n' "$(dock_mode)"
+  if [[ -f "$STATE_FILE" ]]; then
+    printf 'Saved settings: %s (undo with: dockctl on)\n' "$(state_lookup captured_at)"
+  else
+    printf 'Saved settings: none\n'
+  fi
+}
+
+require_macos
+[[ $# -ge 1 ]] || usage
+case "$1" in
+  off)
+    case "${2:-}" in
+      '' | --hard) [[ $# -le 2 ]] || usage; command_off hard ;;
+      --soft) [[ $# -eq 2 ]] || usage; command_off soft ;;
+      *) usage ;;
+    esac
+    ;;
+  on) [[ $# -eq 1 ]] || usage; command_on ;;
+  status) [[ $# -eq 1 ]] || usage; command_status ;;
+  -h | --help | help) usage 0 ;;
+  *) usage ;;
+esac

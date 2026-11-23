@@ -2,6 +2,9 @@
 /*
 !/.gitignore
 
+# macOS-only helpers; linked into ~/.local/bin rather than mirrored into $HOME.
+!/mac/
+
 # Track shared configuration sources, not migration backups or runtime files.
 !/.ai/
 /.ai/*
