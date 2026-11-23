@@ -21,16 +21,9 @@ Personal Pi coding agent configuration. Shared coding and communication rules ar
 │   ├── skills/              # Agent skills (SKILL.md)
 │   │   ├── browser/
 │   │   ├── grill-with-docs/
-│   │   ├── improve-codebase-architecture/
-│   │   ├── index-knowledge/
 │   │   ├── code-reviewer/    # Includes references/over-engineering.md
 │   │   └── subagent/         # Parent-only RPC delegation protocol
-│   ├── prompts/             # Prompt templates (/commands)
-│   │   ├── code-reviewer.md
-│   │   ├── the-architect.md
-│   │   ├── grill-with-docs.md
-│   │   ├── improve-codebase-architecture.md
-│   │   └── index-knowledge.md
+│   ├── prompts/             # Prompt templates (/commands; currently empty)
 │   └── npm/                 # Auto-managed packages
 ```
 
