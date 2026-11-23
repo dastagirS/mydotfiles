@@ -1,6 +1,4 @@
 import importlib.util
-import hashlib
-import json
 from itertools import islice
 from pathlib import Path
 import re
@@ -8,7 +6,6 @@ import unittest
 
 CONFIGURATION_ROOT = Path(__file__).resolve().parent
 DIRECTORY_COUNT_MAX = 64
-DASHBOARD_IMAGES_COUNT = 14
 SPECIFICATION = importlib.util.spec_from_file_location("shared_setup_build", CONFIGURATION_ROOT / "build.py")
 BUILD = importlib.util.module_from_spec(SPECIFICATION)
 SPECIFICATION.loader.exec_module(BUILD)
@@ -67,53 +64,54 @@ class SharedSetupTests(unittest.TestCase):
             self.assertFalse((root / "agent-browser").exists())
             self.assertFalse((root / "agent-browser").is_symlink())
 
-    def test_dashboard_originals_remain_available(self):
-        images = CONFIGURATION_ROOT / "shared/skills/design/assets/design-references/dashboard"
-        originals = list(islice(images.glob("*.png"), DASHBOARD_IMAGES_COUNT + 1))
-        self.assertEqual(len(originals), DASHBOARD_IMAGES_COUNT)
-        for image in originals:
-            with image.open("rb") as stream:
-                self.assertEqual(stream.read(8), b"\x89PNG\r\n\x1a\n")
-        references = CONFIGURATION_ROOT / "shared/skills/design/references"
-        self.assertTrue((references / "DESIGN-RESEARCH.md").is_file())
-        self.assertFalse((references / "dashboard").exists())
-        self.assertFalse((references / "web-inspiration.md").exists())
+    def test_design_skill_files_are_current(self):
+        skill = CONFIGURATION_ROOT / "shared/skills/design"
+        for relative in [
+            "SKILL.md",
+            "references/DESIGN-REFERENCES.md",
+            "scripts/audit-design.py",
+            "LICENSE",
+            "SOURCES.md",
+        ]:
+            with self.subTest(path=relative):
+                self.assertTrue((skill / relative).is_file())
+        self.assertFalse((skill / "references/DESIGN-RESEARCH.md").exists())
+        self.assertFalse((skill / "references/web-inspiration.md").exists())
+        self.assertFalse((skill / "references/dashboard").exists())
+        self.assertFalse((skill / "assets").exists())
 
     def test_design_reference_links_resolve(self):
         skill = CONFIGURATION_ROOT / "shared/skills/design"
         for document in [
             skill / "SKILL.md",
-            skill / "references/DESIGN-RESEARCH.md",
-            skill / "assets/design-references/html-in-canvas/README.md",
+            skill / "references/DESIGN-REFERENCES.md",
+            skill / "SOURCES.md",
         ]:
             for target in re.findall(r"\]\(([^)]+)\)", document.read_text()):
-                if target.startswith(("http://", "https://", "#")):
+                if target.startswith(("http://", "https://")):
+                    continue
+                path = target.split("#", 1)[0]
+                if not path:
                     continue
                 with self.subTest(document=document.name, target=target):
-                    self.assertTrue((document.parent / target).resolve().exists())
+                    self.assertTrue((document.parent / path).resolve().exists())
 
-    def test_html_in_canvas_reference_set(self):
-        root = CONFIGURATION_ROOT / "shared/skills/design/assets/design-references/html-in-canvas"
-        manifest = json.loads((root / "manifest.json").read_text())
-        self.assertEqual(len(manifest["demos"]), 5)
-        self.assertEqual(
-            {demo["name"] for demo in manifest["demos"]},
-            {"Paper Desk", "Knitted Page", "Jelly", "Exploded View", "Ink"},
-        )
-        for demo in manifest["demos"]:
-            path = root / demo["file"]
-            with self.subTest(demo=demo["name"]):
-                self.assertTrue(path.is_file())
-                content = path.read_text(encoding="utf-8")
-                self.assertTrue(content.startswith("<!doctype html>"))
-                self.assertNotIn("frame-runtime", content)
-                self.assertNotIn("__FRAME_PREAMBLE", content)
-                self.assertNotRegex(content, r"<script\b[^>]*\bsrc=")
-                self.assertNotIn("document.cookie", content)
-                self.assertNotIn("fonts.googleapis.com", content)
-                self.assertNotIn("fonts.gstatic.com", content)
-                self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), demo["local_sha256"])
-                self.assertEqual(path.stat().st_size, demo["local_bytes"])
+    def test_design_research_requires_artifacts_and_browser(self):
+        skill = CONFIGURATION_ROOT / "shared/skills/design"
+        main = (skill / "SKILL.md").read_text()
+        references = (skill / "references/DESIGN-REFERENCES.md").read_text()
+        self.assertIn("A reference artifact is one individual thing", references)
+        self.assertIn("is **not** a reference artifact", references)
+        self.assertIn("| Full page or site | 3 |", references)
+        self.assertIn("Load the `browser` skill and run its availability check", main)
+        self.assertIn("A tweak to an existing surface runs steps 2 and 5 only", main)
+        self.assertIn("when researching design references", main)
+        self.assertIn("candidate queue", main)
+        self.assertIn("**Do not return after one blocked candidate.**", main)
+        self.assertIn("## Research budget", references)
+        self.assertIn("| Candidate opens | 8 |", references)
+        self.assertIn("**Blocked:** record it, open the next candidate.", references)
+        self.assertIn("Never:** report done with accepted below the bar", references)
 
 
 if __name__ == "__main__":
