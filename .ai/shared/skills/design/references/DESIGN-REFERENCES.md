@@ -8,7 +8,7 @@ Read this before Step 2 in [`../SKILL.md`](../SKILL.md). It defines what counts 
 - Research budget
 - Candidate ledger
 - Failure transitions
-- The design-taste MCP (private)
+- The library, through the design MCP
 - Reference directories, not references
 - Font sources
 - Reading a reference
@@ -19,7 +19,16 @@ Read this before Step 2 in [`../SKILL.md`](../SKILL.md). It defines what counts 
 
 ## Browser gate
 
-Load the `browser` skill and run its availability check before the first candidate. If the browser is unavailable, ask the user for permission or an alternative. Only the user can waive the research stage; record that waiver in one line. Direct fetching is not a substitute for inspecting a rendered page.
+Before the first candidate, establish whether this session can drive a browser. Check the tooling you actually have: a `browser` skill, a browser MCP, or an automation CLI with an availability check you can run.
+
+**When you have one**, use it, in a task-scoped isolated session: no stored cookies, not the user's signed-in profile, no sign-ins.
+
+**When you have none**, stop and ask the user, in one line: may I drive the browser installed on this machine, in an isolated session, to inspect candidates for this task? Then wait for the answer.
+
+- Approved: carry on with the research budget below.
+- Declined: ask which alternative they want — they inspect and describe a candidate themselves, they supply screenshots, or they waive the research stage.
+
+Only the user can waive research. Record the waiver in one line in the ledger. Direct fetching is not a substitute for inspecting a rendered page: a scroll, a hover and a resize are the evidence, and `curl` produces none of them.
 
 ## Research budget
 
@@ -64,13 +73,43 @@ One line per candidate. The ledger is the state the report is checked against.
 - **Eight opens and below the bar:** stop and ask the user. Report accepted, rejected, blocked and unexamined candidates separately.
 - **Never:** report done with accepted below the bar unless the user explicitly waives research.
 
-## The design-taste MCP
+## The library, through the design MCP
 
-One more reference directory, and it is private. **If it is available, use it first**: it returns components and designs already found, reviewed and cherry picked, several at a time, so directions can be compared side by side. **If it is not available, carry on with the reference directories below** — nothing about this skill depends on it.
+The `design` MCP server holds components and captures already found, reviewed and cherry picked, several at a time, so directions can be compared side by side. **If it is configured in this session, use it before any gallery.** It is a reference directory like the ones below, and the best stocked one: it answers with real source and a still for every entry.
 
-It ships its own skill. Read that for its tools and for what the library holds; tool mechanics belong there, not here.
+Its tools, in the order the work needs them:
 
-An artifact taken from it counts toward the [evidence bar](#evidence-bar) like any other: one recorded mechanic per artifact.
+| Call | Returns |
+| --- | --- |
+| `skill()` | the index: this workflow, the tools, the reference list |
+| `list()` | every section with how many captures, replicas, references and demos it holds |
+| `search({ query, tags, limit, cursor })` | matching entries, one line each: id, slug, name, tag, kind, and whether a still, a capture and source exist |
+| `describe({ id })` | every asset of one entry, with its size and a presigned URL |
+| `preview({ id })` | the still, as an image you can look at |
+| `code({ id })` | the published source: bundle HTML or original TSX |
+| `video({ id })` | a URL for the screen capture on line 1; it lives two minutes |
+
+Worked sequence for a pricing page:
+
+```
+list()                                  → sections with counts per kind
+search({ query: "pricing table" })      → 7 entries: id | slug | name | tag | kind | video | code
+search({ query: "pricing", tags: ["heroes"] })
+preview({ id: 31 })                     → look at the still; record the mechanic
+code({ id: 31 })                        → durations, easings, spacing, structure
+video({ id: 31 })                       → fetch line 1 at once, extract frames
+```
+
+Four habits keep this evidence rather than mood:
+
+- Search the words for the thing being built. Not a genre, and never an author's handle: handles only match if you already know who made it.
+- A zero result is an answer. Say the library has no such entry instead of widening the query until something appears.
+- A still gives the composition, the source gives the mechanics. A candidate counts as accepted when both have been inspected and the mechanic is recorded; otherwise record why it does not.
+- A presigned URL from `video` or `describe` needs no auth header and works for two minutes. Fetch it at once; if it fails, call the tool again rather than looking for a file on disk.
+
+An artifact taken from the library counts toward the [evidence bar](#evidence-bar) like any other: one recorded mechanic per artifact. Its own index is the authority on what it holds and what each entry is, so read that rather than guessing at entry names.
+
+When the server is not configured, carry on with the directories below. Nothing in this skill depends on it.
 
 ## Reference directories, not references
 
@@ -145,7 +184,7 @@ The galleries and section libraries follow.
 - [OKAY DEV](https://okaydev.co) — community of creative web developers
 - [Save.design](https://save.design) — organise the inspiration you collect
 
-Use these directories to find individual artifacts, not to browse covers. Search the term for the thing being built, plus the requested tone. If the MCP is available, start there; otherwise start with 21st.dev. If needed, use at most two directories before inspecting candidates. That limit applies to discovery, not to the number of artifacts. `collectui.com` and `tympanus.net` were dropped from this list: the first has no DNS record, the second no longer serves Codrops.
+Use these directories to find individual artifacts, not to browse covers. Search the term for the thing being built, plus the requested tone. If the design MCP is configured, start there; otherwise start with 21st.dev. If needed, use at most two directories before inspecting candidates. That limit applies to discovery, not to the number of artifacts. `collectui.com` and `tympanus.net` were dropped from this list: the first has no DNS record, the second no longer serves Codrops.
 
 ## Font sources
 
@@ -164,7 +203,14 @@ Look at each candidate in the form it actually exists in. One form is never enou
 
 **Image.** Open a full-size artifact with the read tool and look at it. A gallery thumbnail is a directory entry; enlarging or screenshotting it does not make it an artifact. Name what you are borrowing: composition, hierarchy, type treatment, density, imagery, the selected state. Name what you are rejecting, and why.
 
-**Video.** Motion cannot be read from a still. Extract frames and look at them:
+**Video.** Motion cannot be read from a still, so it has to be turned into frames first. Do not assume a tool is there: check what this session actually has, in this order.
+
+1. `ffmpeg -version`. It reads every capture in this library and needs no install where it already exists.
+2. If it is absent, look for another frame extractor you can drive: `avconv` on systems that still ship the fork, a GStreamer pipeline (`gst-launch-1.0`), or whatever the harness itself provides. Read its own help rather than guessing flags.
+3. If none exists, ask the user to install `ffmpeg` and say why: it is the one tool that reads every capture here, and no other form of the candidate carries motion. Wait for their answer. Installing is the user's call, not yours: an unasked install changes their machine in a way they never agreed to.
+4. If the user declines, motion stays unverified. Record the candidate as inspected still-only, and either take the mechanic from a still and its source or open the next candidate. Say in the report that motion was not seen.
+
+With a tool in hand, extract frames and look at them:
 
 ```bash
 ffmpeg -i clip.mp4 -vf "fps=4,scale=640:-2" /tmp/frames/frame-%03d.png
@@ -174,7 +220,7 @@ Read four to six frames across the clip, plus a contact sheet when the sequence 
 
 **Code.** Read the source, do not infer it from pixels. Sample the real strings: durations, easings, spacing, colour stops, thresholds. A captured bundle is the authority on how something behaves, and a page that ships a constructed stylesheet hides half of its styling from `outerHTML` — pull `document.styleSheets` when the markup looks unstyled.
 
-**Live page.** Open it through the `browser` skill and inspect the rendered result. Screenshots of a gallery thumbnail are not evidence of how a site behaves; scrolling, hovering and resizing are.
+**Live page.** Open it through whichever browser the [browser gate](#browser-gate) established, and inspect the rendered result. Screenshots of a gallery thumbnail are not evidence of how a site behaves; scrolling, hovering and resizing are.
 
 ## Evidence bar
 

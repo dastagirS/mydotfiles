@@ -103,7 +103,18 @@ class SharedSetupTests(unittest.TestCase):
         self.assertIn("A reference artifact is one individual thing", references)
         self.assertIn("is **not** a reference artifact", references)
         self.assertIn("| Full page or site | 3 |", references)
-        self.assertIn("Load the `browser` skill and run its availability check", main)
+        # The gate moved into the reference: the agent checks what browser it
+        # has, and asks the user before driving the one installed locally.
+        self.assertIn("[browser gate](references/DESIGN-REFERENCES.md#browser-gate)", main)
+        self.assertIn("may i drive the browser installed on this machine", references.lower())
+        self.assertIn("in an isolated session", references)
+        self.assertIn("| `search({ query, tags, limit, cursor })` |", references)
+        # Frame extraction is gated on the tool being present: no silent ffmpeg.
+        self.assertIn("`ffmpeg -version`", references)
+        self.assertIn("ask the user to install `ffmpeg`", references)
+        self.assertIn("Installing is the user's call, not yours", references)
+        self.assertIn("## From scratch", main)
+        self.assertIn("**A live HTML preview** of the actual design.", main)
         self.assertIn("A tweak to an existing surface runs steps 2 and 5 only", main)
         self.assertIn("when researching design references", main)
         self.assertIn("candidate queue", main)

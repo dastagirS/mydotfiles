@@ -2,7 +2,7 @@
 name: design
 description: Visual and interaction design for web UI. Use when building or changing a page, section, component, dashboard, form, chart or design system; when choosing fonts, sizes, spacing, radii, colours, icons, motion or page structure; when writing interface copy; when researching design references, galleries, screenshots or live sites for inspiration; or when reviewing UI that looks unfinished, generic or off brand.
 license: MIT. Complete terms in LICENSE.
-compatibility: Reference research needs network access and the browser skill. Everything else runs offline.
+compatibility: Reference research needs network access and a browser you can drive. Everything else runs offline.
 ---
 
 # Design
@@ -33,7 +33,7 @@ Design progress:
 **2. Research.** Open [references/DESIGN-REFERENCES.md](references/DESIGN-REFERENCES.md) and run its research budget.
 
 - Build a candidate queue with at least two candidates per required artifact; directories are discovery, not a checklist.
-- Load the `browser` skill and run its availability check before the first candidate.
+- Run the [browser gate](references/DESIGN-REFERENCES.md#browser-gate) before the first candidate: drive a browser you have, or ask the user for permission to drive theirs in an isolated session.
 - Search for the term you are building, not a genre. Pivot after two low-yield queries.
 - Inspect each candidate in its own form. Record the mechanic and, when the bar requires it, the rejection.
 - If a candidate is blocked, record it and open the next. **Do not return after one blocked candidate.**
@@ -43,7 +43,7 @@ Done when the evidence bar is met and the ledger records the required accepted a
 
 **3. Brief.** Answer the twelve checks as one line each. Done when none is blank and no line is "TBD".
 
-**4. Build.** Build the sections in the order from check 2, with states written as each component is written. Done when every control on the surface has its full state set.
+**4. Build.** Build the sections in the order from check 2, with states written as each component is written. With no existing surface and no reference from the user, work [from scratch](#from-scratch) first. Done when every control on the surface has its full state set.
 
 **5. Check.** Run the audit and open the result at 390px and 1440px. Done when the audit reports zero errors and both widths hold.
 
@@ -54,6 +54,18 @@ python3 scripts/audit-design.py index.html styles.css
 **6. Report.** Name what works and how to try it, what the audit reported, and what stays unverified. Report accepted, rejected, blocked and unexamined candidates separately. Done when a reader can act on the message without opening the code, and the ledger's accepted count meets the bar or the user has waived it.
 
 A tweak to an existing surface runs steps 2 and 5 only. Anything that changes structure runs all six.
+
+## From scratch
+
+Some briefs arrive with nothing to extend and no reference from the user. There the first artifact you show is the direction, not the finished page, and it is a page rather than a description of one:
+
+1. **Two colour schemes.** Each as named roles with hex values and the contrast ratio of body ink against ground: ground, surface, ink, muted, hairline, accent, and the status set. Two, because one is a guess and three is a menu; the user's choice between them is the decision the rest of the build hangs on.
+2. **A live HTML preview** of the actual design. A real file, opened in a browser, that scrolls and reflows at 390px and 1440px, with the states that fit a preview. Say which file it is so the user can open it. A screenshot, a sentence or a code block is not a preview.
+3. Only then the build, against the scheme the user picks.
+
+Done when the user has picked a scheme and the preview passes the audit at both widths.
+
+The preview costs one page and saves a finished build: a user's reaction to a real page is cheaper than their reaction to something described. Keep it honest, though. It uses the same scale, spacing, surface and state rules as the build, and it passes the audit before you show it, or you are asking for an opinion on something you would not ship.
 
 ---
 
