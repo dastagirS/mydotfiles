@@ -31,6 +31,11 @@
 !/.config/starship/
 !/.config/starship.toml
 
+# Nushell: link targets for ~/Library/Application Support/nushell (macOS) and
+# ~/.config/nushell (Linux). History, plugins and the generated starship hook
+# stay in $nu.data-dir, outside the repo.
+!/.config/nushell/
+
 # Berkeley Mono: allow-list only the installed font file itself, so other
 # font directories (including cloned ones) stay out of the repo.
 !/.local/
