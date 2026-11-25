@@ -9,10 +9,18 @@ compatibility: Reference research needs network access and a browser you can dri
 
 A design is judged on being complete, not on being decorated. **Complete** means all twelve checks on [the scale](#the-design-scale) hold and the token audit passes.
 
-This file is the process and the scale. Two working files sit behind it, and **reading the first one is part of the work, not an option**:
+This file is the process and the scale. Eight files sit behind it: seven references and the audit script. The first two are required where they are named; the rest are read when the work reaches them, which is why each one says when. Every one of them ends with a done condition, and that line is the action to take when you finish reading it.
 
-- [references/DESIGN-REFERENCES.md](references/DESIGN-REFERENCES.md) — **read it before you research anything.** It holds the directories, the search budget, the artifact bar and how to read each kind: a still, a video's frames, a captured bundle.
-- [scripts/audit-design.py](scripts/audit-design.py) — the deterministic half: token tables, motion rules, placeholder markers. Run it before reporting done.
+| File | Read it | Holds |
+|---|---|---|
+| [references/DESIGN-REFERENCES.md](references/DESIGN-REFERENCES.md) | **before you research anything** (step 2) | the browser and video gates, the library's tools, galleries, design systems, the search budget, the evidence bar |
+| [scripts/audit-design.py](scripts/audit-design.py) | step 5, before reporting done | token tables, motion rules, placeholder markers |
+| [references/SURFACES.md](references/SURFACES.md) | step 1 and step 3 | surface families, layout paradigms, the scope inventory, density, reflow |
+| [references/COMPOSITION.md](references/COMPOSITION.md) | step 3 and step 4 | hierarchy, emphasis, grouping, surface separation, elevation, radius |
+| [references/COMPONENTS.md](references/COMPONENTS.md) | step 4, and before calling any component done | one family's DNA, six states, forms, data and selection, tabs, overlays, notifications, scroll, repeated entities |
+| [references/COLOUR-AND-TYPE.md](references/COLOUR-AND-TYPE.md) | step 3, when choosing a palette or a scale | deriving state colours, tinted greys, status sets, dark grounds, type scale, units |
+| [references/ACCESSIBILITY.md](references/ACCESSIBILITY.md) | step 4 and step 5 | the WCAG 2.2 AA checks, ARIA patterns, semantics |
+| [references/PERFORMANCE.md](references/PERFORMANCE.md) | step 4, before choosing fonts, images or a canvas, and step 5 | LCP, CLS and INP, font and image budgets, waiting states |
 
 ## Workflow
 
@@ -85,6 +93,7 @@ Twelve checks. Work them in order: each one constrains the next. A design ships 
 - One primary action per surface. Actions of equal weight competing for the same attention is a structure bug, not a hierarchy choice.
 - Each section answers a question the reader already has, in the order they ask it. Proof sits beside the claim it supports, not in a pile at the bottom.
 - Name the sections in order before writing markup.
+- The surface family decides the shape, and the content decides the paradigm. Both are in [references/SURFACES.md](references/SURFACES.md); choosing a layout because it looks impressive is the most common way it goes wrong.
 
 ## 3. Layout
 
@@ -93,6 +102,7 @@ Twelve checks. Work them in order: each one constrains the next. A design ships 
 - Density is a decision. Name it (airy or compact) and apply it consistently.
 - Reflow rather than shrink. Check 390px and 1440px before calling it done; a layout that only works at one width is unfinished.
 - Break lines where the thought breaks. Never strand a single word on the last line: `text-wrap: balance` for headings, `text-wrap: pretty` for body.
+- The page scrolls. Locking it with `body { overflow: hidden }` to make one screen fit is a defect, not a layout: see [scroll belongs to the page](references/COMPONENTS.md#scroll-belongs-to-the-page).
 
 ## 4. Typography
 
@@ -122,7 +132,7 @@ Twelve checks. Work them in order: each one constrains the next. A design ships 
 | `text-8xl` | 96px | 1 |
 | `text-9xl` | 128px | 1 |
 
-Tracking and line height may only be adjusted within what the matched step already provides, so the two rules never fight.
+Tracking and line height may only be adjusted within what the matched step already provides, so the two rules never fight. Deriving the scale, the sub-16 roles and the rem-versus-px decision: [references/COLOUR-AND-TYPE.md](references/COLOUR-AND-TYPE.md).
 
 **Copy mechanics.** Write sentences without hyphens inside them; rewrite the phrase. Avoid orphaned words. Headings and buttons take sentence case.
 
@@ -156,6 +166,7 @@ Buttons: 8px vertical padding, 12px horizontal.
   Apply only when the result is greater than 2; below that, leave the inner shape as it is.
 
 - Depth shows containment and selection. Show structure with spacing rather than by nesting cards inside cards.
+- Separate a surface by exactly one means — border, elevation or fill — and hold that choice across the product. The reasoning and the elevation scale are in [references/COMPOSITION.md](references/COMPOSITION.md).
 
 ## 7. Colour
 
@@ -163,6 +174,7 @@ Buttons: 8px vertical padding, 12px horizontal.
 - Body text reaches 4.5:1 contrast; large text and icons reach 3:1.
 - Dark grounds: `#000000` · `#181818` · `#1F1F1F` · `#272727` · `#313131` · `#131209`.
 - Colour carries meaning (series, status, selection, exception) and that meaning stays the same across the surface. Decoration stays in ink and ground.
+- Derive, do not pick: hover and active from lightness steps, neutrals tinted with the brand hue, status as a closed set. See [references/COLOUR-AND-TYPE.md](references/COLOUR-AND-TYPE.md).
 
 ## 8. Icons
 
@@ -191,6 +203,8 @@ Every interactive element ships its full set:
 
 No state shifts the surrounding layout. A control either goes somewhere or shows as disabled. The current location is visible.
 
+Completeness is per component, not per page: a form field, tab list, table and modal each have their own list, and a repeated card is one slot model. [references/COMPONENTS.md](references/COMPONENTS.md) is the bar before anything is called done.
+
 ## 11. Content
 
 - Write the copy. Real sentences, from the audience's side of the screen.
@@ -208,10 +222,14 @@ No state shifts the surrounding layout. A control either goes somewhere or shows
 - A skip link, visible focus, client side validation for required fields and email format.
 - Legal links where the product needs them, a custom 404, a way back from every page.
 - The audit covers the mechanical tail: dead `href="#"`, images without alt, missing title, placeholder copy.
+- Accessibility at WCAG 2.2 AA is decided while building: [references/ACCESSIBILITY.md](references/ACCESSIBILITY.md).
+- Performance is a design decision made here, not a build setting: fonts, images and any canvas have budgets in [references/PERFORMANCE.md](references/PERFORMANCE.md). Name LCP, CLS and INP for what you built, or say which you could not measure.
 
 ---
 
 ## Credits
+
+The six references that carry depth — surfaces, composition, components, colour and type, accessibility, performance — condense rules from [dembrandt-skills](https://github.com/dembrandt/dembrandt-skills), MIT licensed, pinned at `97b2031` and recorded in [SOURCES.md](SOURCES.md). They are rewrites in this skill's voice, not copies; the pinned revision is the audited source, not a claim that the text matches it.
 
 Parts of this skill were adapted from [taste-skill](https://github.com/Leonxlnx/taste-skill) by Leon Lin ([@LexnLin](https://x.com/LexnLin)), MIT licensed. Its content realism checks and motion ideas informed the matching sections here, which have since been rewritten. Provenance and pins are recorded in [SOURCES.md](SOURCES.md).
 

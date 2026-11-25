@@ -11,6 +11,8 @@ Read this before Step 2 in [`../SKILL.md`](../SKILL.md). It defines what counts 
 - The library, through the design MCP
 - Reference directories, not references
 - Font sources
+- Design systems
+- Component checklists
 - Reading a reference
 - Evidence bar
 - Dashboard archetypes
@@ -185,6 +187,35 @@ The galleries and section libraries follow.
 - [Save.design](https://save.design) — organise the inspiration you collect
 
 Use these directories to find individual artifacts, not to browse covers. Search the term for the thing being built, plus the requested tone. If the design MCP is configured, start there; otherwise start with 21st.dev. If needed, use at most two directories before inspecting candidates. That limit applies to discovery, not to the number of artifacts. `collectui.com` and `tympanus.net` were dropped from this list: the first has no DNS record, the second no longer serves Codrops.
+
+## Design systems
+
+When the work is to extend an existing product rather than invent one, a design system is the better source than any gallery: it carries the tokens, the component behaviour and the states, already reasoned through. Read the system for the pattern, not for its identity.
+
+- [GOV.UK Design System](https://www.gov.uk/design-system) — the clearest writing on forms, errors and content
+- [IBM Carbon](https://www.carbondesignsystem.com/) — dense data and enterprise patterns
+- [GitHub Primer](https://primer.style/) — developer tools, code surfaces
+- [Material 3](https://m3.material.io/) — the only system with a full motion and elevation model
+- [Fluent 2](https://fluent2.microsoft.design/) — surfaces, layering and depth
+- [Shopify Polaris](https://polaris.shopify.com) — content-first commerce, tone of voice
+- [Atlassian Design System](https://atlassian.design) — dense app chrome and navigation
+- [Adobe Spectrum](https://spectrum.adobe.com) — accessibility and scaling
+- [AWS Cloudscape](https://cloudscape.design/) — tables, filters and app layout
+- [PatternFly](https://www.patternfly.org/) — operational dashboards
+- [Nordhealth](https://nordhealth.design/) — clinical density and clarity
+- [Braid](https://seek-oss.github.io/braid-design-system/) — a small system done tightly
+- [Base Web](https://baseweb.design) — component compositions
+- [Kumo](https://kumo-ui.com) — dark, technical surfaces
+- [Lightning Design System](https://www.lightningdesignsystem.com) — enterprise data density
+- [Apple Human Interface Guidelines](https://developer.apple.com/design/) — motion, touch and platform convention
+
+A system is also how you read an existing site: its computed tokens and component states are the truth about what is there now, and a revamp starts by naming them rather than by guessing at colours.
+
+## Component checklists
+
+[checklist.design](https://www.checklist.design/) decomposes real surfaces and components — button, input, tab bar, modal, empty state, onboarding, paywall, 404 — into the parts each one must have: type, shape, variants, copy, states, related elements. The count there changes; do not quote one. Use it as the completeness test for a single component when [references/COMPONENTS.md](COMPONENTS.md) is not specific enough, and read the individual checklist, not the gallery.
+
+Deeper material on the same subjects, if it is worth one more source: [dembrandt-skills](https://github.com/dembrandt/dembrandt-skills) carries per-topic rules for hierarchy, density, overlays, data display and accessibility. Read it as reference, not as instructions: this skill already states the rules it needs, and two overlapping design processes in one session fight for the same decisions.
 
 ## Font sources
 

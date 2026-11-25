@@ -82,11 +82,7 @@ class SharedSetupTests(unittest.TestCase):
 
     def test_design_reference_links_resolve(self):
         skill = CONFIGURATION_ROOT / "shared/skills/design"
-        for document in [
-            skill / "SKILL.md",
-            skill / "references/DESIGN-REFERENCES.md",
-            skill / "SOURCES.md",
-        ]:
+        for document in [skill / "SKILL.md", skill / "SOURCES.md", *sorted((skill / "references").glob("*.md"))]:
             for target in re.findall(r"\]\(([^)]+)\)", document.read_text()):
                 if target.startswith(("http://", "https://")):
                     continue
@@ -114,6 +110,11 @@ class SharedSetupTests(unittest.TestCase):
         self.assertIn("ask the user to install `ffmpeg`", references)
         self.assertIn("Installing is the user's call, not yours", references)
         self.assertIn("## From scratch", main)
+        # Every reference is announced with when to read it, and the depth files
+        # exist where SKILL.md sends the agent.
+        for name in ("SURFACES", "COMPOSITION", "COMPONENTS", "COLOUR-AND-TYPE", "ACCESSIBILITY", "PERFORMANCE"):
+            self.assertIn(f"references/{name}.md](references/{name}.md)", main)
+            self.assertTrue((skill / f"references/{name}.md").is_file())
         self.assertIn("**A live HTML preview** of the actual design.", main)
         self.assertIn("A tweak to an existing surface runs steps 2 and 5 only", main)
         self.assertIn("when researching design references", main)
