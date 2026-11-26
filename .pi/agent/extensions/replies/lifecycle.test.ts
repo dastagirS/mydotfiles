@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { collectReplies } from './model.mjs';
-import { ReplyNavigator,Container,Text,TuiAltScreen,TuiMainScreen,StdinBuffer,stripTerminalSequences,AssistantMessageComponent,getMarkdownTheme,themeModule,createChatViewport,createInteractiveTuiReference } from './test-runtime.mjs';
+import { collectReplies } from './model.ts';
+import { ReplyNavigator,Container,Text,TuiAltScreen,TuiMainScreen,StdinBuffer,stripTerminalSequences,AssistantMessageComponent,getMarkdownTheme,themeModule,createChatViewport,createInteractiveTuiReference } from './test-runtime.ts';
 function setup(){
  const terminal={columns:100,rows:26,kittyProtocolActive:false,start(input){this.stdinBuffer=new StdinBuffer();this.stdinBuffer.on('data',input);this.input=data=>this.stdinBuffer.process(data);},stop(){this.stdinBuffer.destroy();},write(){},drainInput:async()=>{},moveBy(){},hideCursor(){},showCursor(){},clearLine(){},clearFromCursor(){},clearScreen(){},setTitle(){},setProgress(){},setProgramStatus(){}};
  const chat=new Container(),editor=new Text('DRAFT',0,0),document=new Container();document.addChild(chat);
@@ -18,7 +18,7 @@ test('ambiguous identical message objects get an ID-labelled saved copy rather t
  const f=setup();const first=entry('first','Identical answer');const second={...first,id:'second'};
  for(const value of [first,second])f.chat.addChild(new AssistantMessageComponent(value.message,true,getMarkdownTheme()));
  f.navigator.update(collectReplies([first,second],new Set(['first','second'])),themeModule.theme);
- try{assert.equal(f.navigator.attach(f.reference),true);f.current.renderNow(true);assert.equal(f.navigator.jump('second'),true);f.current.renderNow(true);assert.match(screen(f),/Saved parent final · second/);}finally{f.navigator.dispose();f.current.stop();}
+ try{assert.equal(f.navigator.attach(f.reference),true);f.current.renderNow(true);assert.equal(f.navigator.jump('second'),true);f.current.renderNow(true);assert.match(screen(f),/Saved agent · second/);}finally{f.navigator.dispose();f.current.stop();}
 });
 test('switching native renderer modes restores the original viewport then remounts cleanly without changing the dock',()=>{
  const f=setup();const value=entry('saved','SAVED AFTER MODE SWITCH');f.navigator.update(collectReplies([value],new Set()),themeModule.theme);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { collectReplies } from './model.mjs';
-import { ReplyNavigator,Container,Text,TuiAltScreen,stripTerminalSequences,AssistantMessageComponent,getMarkdownTheme,themeModule as theme,createChatViewport } from './test-runtime.mjs';
+import { collectReplies } from './model.ts';
+import { ReplyNavigator,Container,Text,TuiAltScreen,stripTerminalSequences,AssistantMessageComponent,getMarkdownTheme,themeModule as theme,createChatViewport } from './test-runtime.ts';
 test('jump lands on the final body, not expanded thinking above it',()=>{
  const terminal={columns:90,rows:24,kittyProtocolActive:false,start(){},stop(){},write(){},drainInput:async()=>{},moveBy(){},hideCursor(){},showCursor(){},clearLine(){},clearFromCursor(){},clearScreen(){},setTitle(){},setProgress(){},setProgramStatus(){}};
  const message={role:'assistant',stopReason:'stop',timestamp:4,provider:'fixture',model:'fixture',content:[{type:'thinking',thinking:Array.from({length:80},(_,index)=>'Thinking line '+index).join('\n')},{type:'text',text:'ACTUAL FINAL BODY'}]};

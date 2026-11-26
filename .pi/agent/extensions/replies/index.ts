@@ -1,5 +1,5 @@
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { collectReplies, LIMITS } from './model.mjs';
+import { collectReplies, LIMITS } from './model.ts';
 import { ReplyNavigator } from './view';
 
 const WIDGET_KEY='replies';
@@ -41,7 +41,7 @@ export default function replies(pi:ExtensionAPI):void {
    } else {navigator.syncLayout();navigator.update(snapshot,current.ui.theme);}
    leaf=current.sessionManager.getLeafId();
    return true;
-  } catch {warn('Reply history disabled after a refresh failure; reload after correcting the session/layout. Conversation state was not changed.');navigator?.dispose();return false;}
+  } catch {warn('Prompt/reply history disabled after a refresh failure; reload after correcting the session/layout. Conversation state was not changed.');navigator?.dispose();return false;}
  };
  const schedule=(current:ExtensionContext)=>{
   if(!active)return;
@@ -50,7 +50,7 @@ export default function replies(pi:ExtensionAPI):void {
   timer=setTimeout(()=>{timer=undefined;if(active&&context)refresh(context);},UPDATE_DELAY_MS);
   timer.unref();
  };
- pi.registerCommand('replies',{description:'Browse parent final responses without changing model context',handler:async (_arguments,current)=>{refresh(current);if(current.hasUI&&current.mode==='tui')navigator?.openMenu();else current.ui.notify('Replies are available in Pi fullscreen interactive mode.','warning');}});
+ pi.registerCommand('replies',{description:'Browse prompts and final responses without changing model context',handler:async (_arguments,current)=>{refresh(current);if(current.hasUI&&current.mode==='tui')navigator?.openMenu();else current.ui.notify('Replies are available in Pi fullscreen interactive mode.','warning');}});
  pi.on('session_start',(_event,current)=>{dispose();active=current.hasUI&&current.mode==='tui';if(active)refresh(current);});
  pi.on('session_shutdown',dispose);
  pi.on('turn_end',(event,current)=>{if(event.message.role==='assistant'&&event.message.stopReason==='stop')schedule(current);});

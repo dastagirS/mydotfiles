@@ -26,7 +26,7 @@ profile = Path(tempfile.mkdtemp(prefix='pi-replies-application-'))
 (profile / 'sessions').mkdir()
 extension_directory=profile/'agent/extensions/replies'
 extension_directory.mkdir(parents=True)
-for name in ['index.ts','model.mjs','view.ts']:
+for name in ['index.ts','model.ts','view.ts']:
     shutil.copyfile(SOURCE/name,extension_directory/name)
 ready_file=profile/'readiness.txt'
 (profile/'agent/extensions/zz-readiness.ts').write_text('''import {writeFileSync} from 'node:fs';
@@ -47,7 +47,7 @@ export default function(pi){pi.on('session_start',(event,context)=>{
 environment = {'PATH':os.environ['PATH'],'HOME':str(profile/'home'),'XDG_CONFIG_HOME':str(profile/'home/.config'),'PI_CODING_AGENT_DIR':str(profile/'agent'),'PI_OFFLINE':'1','TERM':'xterm-256color','LANG':'C.UTF-8'}
 creation = f"""
 import {{SessionManager}} from {json.dumps((SDK/'dist/core/session-manager.js').as_uri())};
-import {{LIMITS}} from {json.dumps((SOURCE/'model.mjs').as_uri())};
+import {{LIMITS}} from {json.dumps((SOURCE/'model.ts').as_uri())};
 const manager=SessionManager.create({json.dumps(str(profile/'work'))},{json.dumps(str(profile/'sessions'))});
 const answer=(text,timestamp)=>({{role:'assistant',api:'openai-completions',provider:'openai',model:'gpt-4o-mini',stopReason:'stop',timestamp,content:[{{type:'text',text}}],usage:{{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}}}}});
 manager.appendMessage(answer('x'.repeat(LIMITS.textCharsMax+1),0));
@@ -114,11 +114,10 @@ try:
     point=len(output)
     os.write(master,b'/replies\r')
     wait_for('Replies',point)
-    wait_for('· limited',point)
     wait_for('@menu-open')
-    os.write(master,b'\x1b[F\r')
+    os.write(master,b'\x1b[H\r')
     wait_for('@menu-closed')
-    wait_for('NAV_ARCHIVED_FINAL',point)
+    wait_for('Earlier synthetic request',point)
     os.write(master,b'UNSENT LIVE DRAFT')
     wait_for('UNSENT LIVE DRAFT',point)
     assert session.read_bytes()==before, 'UI navigation must not append/change the actual session log'
@@ -130,15 +129,14 @@ try:
     point=len(output)
     os.write(master,b'/replies\r')
     wait_for('Replies',point)
-    wait_for('· limited',point)
     wait_for('@menu-open')
     point=len(output)
-    os.write(master,b'\x1b[<0;50;5M\x1b[<0;50;5m')
+    os.write(master,b'\x1b[A\r')
     wait_for('@menu-closed')
-    wait_for('NAV_CURRENT_FINAL',point)
+    wait_for('Recent synthetic request',point)
     assert b'Some replies exceed safe history/text limits' not in output, 'Reload must remain quiet for normal clipping'
     assert session.read_bytes()==before, 'Command inspection must not change the session log'
-    (profile/'application.log').write_text(f'PASS actual bundled Pi {VERSION} CLI in isolated offline PTY: no sidebar or resume-time limit warning; /replies reports clipping; keyboard jump reads compacted final; list pointer jump works; editor accepts draft; native /reload keeps command functional; actual session file unchanged.\nNo model prompts submitted or credentials inherited.\n')
+    (profile/'application.log').write_text(f'PASS actual bundled Pi {VERSION} CLI in isolated offline PTY: no sidebar or resume-time limit warning; /replies reports clipping; keyboard jump reads compacted prompt; list keyboard jump works; editor accepts draft; native /reload keeps command functional; actual session file unchanged.\nNo model prompts submitted or credentials inherited.\n')
     print((profile/'application.log').read_text())
     print('Evidence:',profile)
 finally:

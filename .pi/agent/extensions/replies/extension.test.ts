@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { LIMITS } from './model.mjs';
-import { replies,themeModule } from './test-runtime.mjs';
+import { replies,themeModule } from './test-runtime.ts';
 
 function fixture(branch,renderWidget=false){
  const handlers=new Map(),commands=new Map(),notices=[];let inputSubscriptions=0;
@@ -11,7 +10,7 @@ function fixture(branch,renderWidget=false){
 }
 
 test('limited history stays quiet on start/resume without passive input subscriptions',()=>{
- const branch=Array.from({length:LIMITS.repliesMax+1},(_,index)=>({type:'message',id:String(index),message:{role:'assistant',stopReason:'stop',content:[{type:'text',text:'Final '+index}]}}));
+ const branch=Array.from({length:1000},(_,index)=>({type:'message',id:String(index),message:{role:'assistant',stopReason:'stop',content:[{type:'text',text:'Final '+index}]}}));
  const f=fixture(branch);
  try{
   f.handlers.get('session_start')({reason:'startup'},f.context);

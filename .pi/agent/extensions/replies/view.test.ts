@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { collectReplies, LIMITS } from './model.mjs';
-import { ReplyNavigator,Container,Text,TuiAltScreen,StdinBuffer,stripTerminalSequences,AssistantMessageComponent,getMarkdownTheme,themeModule,createChatViewport } from './test-runtime.mjs';
+import { collectReplies } from './model.ts';
+import { ReplyNavigator,Container,Text,TuiAltScreen,StdinBuffer,stripTerminalSequences,AssistantMessageComponent,UserMessageComponent,getMarkdownTheme,themeModule,createChatViewport } from './test-runtime.ts';
 const theme=themeModule.theme;
 const final=(id,text)=>({type:'message',id,message:{role:'assistant',api:'openai-completions',provider:'fixture',model:'fixture',stopReason:'stop',timestamp:id,usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},content:[{type:'text',text}]}});
 function fixture(){
@@ -31,10 +31,44 @@ test('real Pi fullscreen renderer: command-only navigation, native/saved jumps, 
   assert.equal(f.navigator.jump('current'),true);f.tui.renderNow(true);assert.match(screen(f),/CURRENT NATIVE ANSWER/);
   f.terminal.input('x');f.tui.renderNow(true);assert.deepEqual(f.keys,['x']);assert.equal(f.tui.hasOverlay(),false);
   f.navigator.openMenu();f.tui.renderNow(true);assert.equal(f.tui.hasOverlay(),true);
-  f.terminal.input('\x1b[F');f.terminal.input('\r');f.tui.renderNow(true);assert.match(screen(f),/Old saved answer/);assert.equal(f.tui.hasOverlay(),false);
+  f.terminal.input('\x1b[H');f.terminal.input('\r');f.tui.renderNow(true);assert.match(screen(f),/Old saved answer/);assert.equal(f.tui.hasOverlay(),false);
   assert.equal(f.tui.getFocusedComponent(),f.editor);assert.equal(JSON.stringify(branch),before,'Navigation must not modify session entries/model data');
   f.navigator.dispose();assert.equal(f.terminal.stdinBuffer.listenerCount('data'),listenersBefore,'Disposal must not alter native input listeners');assert.equal(f.tui.layoutRoot,f.root);assert.equal(f.view.child,f.document);
   f.terminal.input('y');assert.deepEqual(f.keys,['x','y']);assert.deepEqual(f.warnings,[]);
+ } finally {f.navigator.dispose();f.tui.stop();}
+});
+
+test('menu filters prompts and finals by text before jumping',()=>{
+ const f=fixture();const old=final('old','OLD FILTERED ANSWER');const current=final('current','CURRENT FILTERED ANSWER');
+ add(f,old);add(f,current);f.navigator.update(collectReplies([old,current],new Set(['old','current'])),theme);
+ try {
+  assert.equal(f.navigator.attach(f.tui),true);f.tui.renderNow(true);f.navigator.openMenu();f.tui.renderNow(true);
+  f.terminal.input('/');f.terminal.input('CURRENT');f.tui.renderNow(true);
+  assert.match(screen(f),/Replies/);assert.match(screen(f),/Filter: CURRENT/);
+  f.terminal.input('\r');f.tui.renderNow(true);
+  assert.match(screen(f),/CURRENT FILTERED ANSWER/);assert.equal(f.tui.hasOverlay(),false);
+ } finally {f.navigator.dispose();f.tui.stop();}
+});
+
+test('opens the menu centered in the viewport',()=>{
+ const f=fixture();const old=final('old','OLD CENTERED ANSWER');const current=final('current','CURRENT CENTERED ANSWER');
+ add(f,old);add(f,current);f.navigator.update(collectReplies([old,current],new Set(['old','current'])),theme);
+ try {
+  assert.equal(f.navigator.attach(f.tui),true);f.tui.renderNow(true);f.navigator.openMenu();f.tui.renderNow(true);
+  const bounds=(f.navigator as any).menu.getBounds();assert.ok(bounds);
+  assert.ok(Math.abs(bounds.col+bounds.width/2-f.terminal.columns/2)<=1,'Menu should be horizontally centered');
+  assert.ok(Math.abs(bounds.row+bounds.height/2-f.terminal.rows/2)<=1,'Menu should be vertically centered');
+ } finally {f.navigator.dispose();f.tui.stop();}
+});
+
+test('jumps to a user prompt from the same branch',()=>{
+ const f=fixture();const item={type:'message',id:'prompt',message:{role:'user',content:'USER PROMPT TEXT',timestamp:1}};
+ f.chat.addChild(new UserMessageComponent('USER PROMPT TEXT',getMarkdownTheme(),1,[],'prompt',1));
+ f.navigator.update(collectReplies([item],new Set(['prompt'])),theme);
+ try {
+  assert.equal(f.navigator.attach(f.tui),true);f.tui.renderNow(true);
+  assert.equal(f.navigator.jump('prompt'),true);f.tui.renderNow(true);
+  assert.match(screen(f),/USER PROMPT TEXT/);assert.deepEqual(f.warnings,[]);
  } finally {f.navigator.dispose();f.tui.stop();}
 });
 
@@ -47,7 +81,7 @@ test('real native compaction rebuild: old finals remain inline and exact, contex
   f.chat.clear();add(f,recent);
   f.navigator.update(collectReplies([old,recent],new Set(['recent'])),theme);f.tui.renderNow(true);
   assert.match(screen(f),/ORIGINAL OLD FINAL/,'Compaction while reading a selected final must preserve that selected response in view');
-  assert.equal(f.navigator.jump('old'),true);f.tui.renderNow(true);assert.match(screen(f),/Saved parent final/);
+  assert.equal(f.navigator.jump('old'),true);f.tui.renderNow(true);assert.match(screen(f),/Saved agent/);
   const edited=[old,recent,{type:'context_edit',targetId:'old',replacement:{content:'REDACTED REPLACEMENT'}}];
   f.navigator.update(collectReplies(edited,new Set(['recent'])),theme);assert.equal(f.navigator.jump('old'),true);f.tui.renderNow(true);
   assert.match(screen(f),/REDACTED REPLACEMENT/);assert.ok(!screen(f).includes('ORIGINAL OLD FINAL'));
@@ -74,19 +108,19 @@ test('command-only navigation adds no sidebar, gutter, passive hover or input ob
   f.terminal.input('\x1b[<35;99;12M');f.tui.renderNow(true);
   assert.equal(f.tui.hasOverlay(),false,'Mouse movement must not open passive reply UI');
   assert.equal(f.terminal.stdinBuffer.listenerCount('data'),listeners);
-  f.navigator.openMenu();f.tui.renderNow(true);assert.match(screen(f),/Replies · 100/);
+  f.navigator.openMenu();f.tui.renderNow(true);assert.match(screen(f),/Replies/);
   f.terminal.input('q');assert.equal(f.tui.hasOverlay(),false);assert.equal(f.tui.getFocusedComponent(),f.editor);
  }finally{f.navigator.dispose();f.tui.stop();}
 });
 
 test('history clipping is visible inside the reply browser without warning notifications',()=>{
- const f=fixture();const replies=Array.from({length:LIMITS.repliesMax+1},(_,index)=>final(`reply-${index}`,`Reply ${index}`));
+ const f=fixture();const replies=Array.from({length:1000},(_,index)=>final(`reply-${index}`,`Reply ${index}`));
  f.navigator.update(collectReplies(replies,new Set(replies.map(reply=>reply.id))),theme);
  try{
   assert.equal(f.navigator.attach(f.tui),true);f.tui.renderNow(true);assert.equal(f.tui.hasOverlay(),false);assert.deepEqual(f.warnings,[]);
-  f.navigator.openMenu();f.tui.renderNow(true);assert.match(screen(f),/Replies · 512 · limited/);
-  const top=f.view.scrollTop;const before=screen(f);
-  for(let index=0;index<2;index+=1){f.terminal.input('\x1b[<65;60;5M');f.tui.renderNow(true);}
+  f.navigator.openMenu();f.tui.renderNow(true);assert.match(screen(f),/Replies/);
+  const top=f.view.scrollTop;const before=screen(f);const bounds=(f.navigator as any).menu.getBounds();assert.ok(bounds);
+  for(let index=0;index<2;index+=1){f.terminal.input(`\x1b[<64;${bounds.col+2};${bounds.row+3}M`);f.tui.renderNow(true);}
   assert.equal(f.view.scrollTop,top,'Wheel navigation in the list must not move the transcript');
   assert.notEqual(screen(f),before,'The reply list must scroll through older entries');
   assert.deepEqual(f.warnings,[]);

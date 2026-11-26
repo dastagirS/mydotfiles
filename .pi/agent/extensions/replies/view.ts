@@ -1,16 +1,15 @@
 import { Container, Markdown, Text, matchesKey, truncateToWidth, stripTerminalSequences, type Component, type TUI, type OverlayHandle } from '@earendil-works/pi-tui';
-import { getMarkdownTheme, VERSION, type Theme } from '@earendil-works/pi-coding-agent';
-import { LIMITS } from './model.mjs';
+import { getMarkdownTheme, type Theme } from '@earendil-works/pi-coding-agent';
+import { LIMITS, type Reply, type Snapshot } from './model.ts';
 
-type Reply = { id:string; text:string; question:string; archived:boolean; message:unknown };
-type Snapshot = { replies:Reply[]; limited:boolean };
-const SUPPORTED_PI_VERSIONS = new Set(['1.4.0','1.5.0']);
-const MENU_ITEMS_MAX = 6;
+const MENU_ITEMS_MAX = 20;
+const MENU_PADDING_X = 2;
 const PREVIEW_CHARS_MAX = 640;
 const REPLY_LABEL_CHARS = 8;
 
 function safe(text:string):string { return stripTerminalSequences(text).replace(/[\x00-\x08\x0b-\x1f\x7f]/g,''); }
 function summary(text:string):string { return safe(text.slice(0,PREVIEW_CHARS_MAX)).replace(/\s+/g,' ').replace(/^[#*>\s]+/,'').trim(); }
+function fingerprint(text:string):number { let hash=2166136261;for(let index=0;index<text.length;index+=1){hash^=text.charCodeAt(index);hash=Math.imul(hash,16777619);}return hash>>>0; }
 
 function nativeBodyRow(component:any,row:number,width:number):number|undefined {
  const parts=component.lastMessage.content;
@@ -47,6 +46,13 @@ export class ReplyNavigator {
  private disposed=false;
  private warnings=new Set<string>();
  private menuId:string|undefined;
+ private nativeRows=new Map<string,number>();
+ private nativeWidth=0;
+ private snapshotSignature='';
+ private searchText=new Map<string,string>();
+ private searchTextSignature='';
+ private filter='';
+ private filterMode=false;
 
  constructor(theme:Theme, private warn:(message:string)=>void, private beforeJump:()=>boolean=()=>true) {
   this.theme=theme;
@@ -55,7 +61,7 @@ export class ReplyNavigator {
  attach(tui:TUI):boolean {
   if(this.disposed)return false;
   this.tui=tui;
-  if(!SUPPORTED_PI_VERSIONS.has(VERSION)||tui.mode!=='fullscreen')return false;
+  if(tui.mode!=='fullscreen')return false;
   if(this.isMounted())return true;
   const root=this.tui.layoutRoot;
   const layout=root?.layoutType==='vstack'&&Array.isArray(root.entries)?{type:root.layoutType,entries:root.entries}:undefined;
@@ -76,21 +82,27 @@ export class ReplyNavigator {
  isMounted():boolean { return !this.disposed&&this.combined!==undefined&&this.tui?.mode==='fullscreen'&&this.tui.layoutRoot===this.originalRoot&&this.view?.child===this.combined; }
  syncLayout():void {
   if(this.disposed||!this.tui||this.isMounted())return;
+  this.nativeRows.clear();this.nativeWidth=0;
   if(this.combined&&this.view?.child===this.combined){this.view.child=this.originalDocument;this.view.children[0]=this.originalDocument;}
   if(this.tui.mode==='fullscreen'&&(!this.originalRoot||this.tui.layoutRoot===this.originalRoot))this.attach(this.tui);
  }
  update(snapshot:Snapshot,theme:Theme):void {
   if(this.disposed)return;
-  if(this.theme!==theme){this.theme=theme;this.savedCache.clear();}
+  if(this.theme!==theme){this.theme=theme;this.savedCache.clear();this.archiveLines=undefined;}
   const oldReplies=this.snapshot.replies;
+  const signature=snapshot.replies.map(reply=>`${reply.id}:${reply.role}:${reply.archived?1:0}:${reply.text.length}:${fingerprint(reply.text)}:${reply.question.length}`).join('|');
+  const layoutChanged=signature!==this.snapshotSignature;
+  if(layoutChanged){this.nativeRows.clear();this.nativeWidth=0;this.snapshotSignature=signature;}
   const oldSaved=oldReplies.filter(reply=>reply.archived||reply.id===this.promotedId).map(reply=>reply.id).join('|');
   const newSaved=snapshot.replies.filter(reply=>reply.archived||reply.id===this.promotedId).map(reply=>reply.id).join('|');
   const selectionMoved=snapshot.replies.some(reply=>reply.id===this.selectedId&&reply.archived&&oldReplies.some(previous=>previous.id===reply.id&&!previous.archived));
   const previousHeight=this.savedHeight();const previousTop=this.view?.scrollTop??0;
   const following=this.view?.isFollowingEnd??true;
-  this.snapshot=snapshot;this.archiveLines=undefined;
+  this.snapshot=snapshot;
+  if(layoutChanged||oldSaved!==newSaved)this.archiveLines=undefined;
   if(!snapshot.replies.some(reply=>reply.id===this.selectedId))this.selectedId=snapshot.replies.at(-1)?.id;
   if(!snapshot.replies.some(reply=>reply.id===this.menuId))this.menuId=this.selectedId;
+  if(this.filter&&!this.menuRows().some(reply=>reply.id===this.menuId))this.menuId=this.menuRows().at(-1)?.id;
   if(!snapshot.replies.some(reply=>reply.id===this.promotedId))this.promotedId=undefined;
   const ids=new Set(snapshot.replies.map(reply=>reply.id));
   for(const id of this.savedCache.keys())if(!ids.has(id))this.savedCache.delete(id);
@@ -105,6 +117,7 @@ export class ReplyNavigator {
    this.tui.requestRender();
   }
  }
+ private menuRows():Reply[] { const query=this.filter.trim().toLowerCase(); if(!query)return this.snapshot.replies; if(this.searchTextSignature!==this.snapshotSignature){this.searchText=new Map(this.snapshot.replies.map(reply=>[reply.id,`${reply.role}\n${reply.text}\n${reply.question}`.toLowerCase()]));this.searchTextSignature=this.snapshotSignature;} return this.snapshot.replies.filter(reply=>(this.searchText.get(reply.id)??'').includes(query)); }
  private width():number { return this.view.getContentWidth(this.tui.terminal.columns); }
  private savedHeight():number { return this.tui&&this.view?this.renderArchive(this.width()).length:0; }
  private renderArchive(width:number):string[] {
@@ -117,60 +130,71 @@ export class ReplyNavigator {
     let saved=this.savedCache.get(reply.id);
     if(!saved||saved.text!==reply.text||saved.question!==reply.question){
      const component=new Container();
-     component.addChild(new Text(this.theme.fg('accent',`Saved parent final · ${reply.id.slice(0,REPLY_LABEL_CHARS)}`),1,1));
+     component.addChild(new Text(this.theme.fg('accent',`Saved ${reply.role==='user'?'user':'agent'} · ${reply.id.slice(0,REPLY_LABEL_CHARS)}`),1,1));
      if(reply.question)component.addChild(new Text(this.theme.fg('muted',summary(reply.question)),1,0));
      component.addChild(new Markdown(safe(reply.text),1,1,getMarkdownTheme()));
      saved={text:reply.text,question:reply.question,component};this.savedCache.set(reply.id,saved);
     }
     const rendered=saved.component.render(width);
-    if(lines.length+rendered.length>LIMITS.renderRowsMax){lines.push(this.theme.fg('warning',truncateToWidth('Saved reply display limit reached; newer context remains below.',width)));break;}
+    if(lines.length+rendered.length>LIMITS.renderRowsMax){lines.push(this.theme.fg('warning',truncateToWidth('Saved item display limit reached; newer context remains below.',width)));break;}
     this.savedRows.set(reply.id,lines.length);lines.push(...rendered);
    }
-  } catch {this.savedRows.clear();this.fail('Saved reply rendering unavailable.');this.archiveWidth=width;this.archiveLines=[truncateToWidth('Saved reply history unavailable.',width)];return this.archiveLines;}
+  } catch {this.savedRows.clear();this.fail('Saved prompt/reply rendering unavailable.');this.archiveWidth=width;this.archiveLines=[truncateToWidth('Saved prompt/reply history unavailable.',width)];return this.archiveLines;}
   this.archiveWidth=width;this.archiveLines=lines;return lines;
  }
  private frame(body:string[],width:number):string[] {
   if(width<4)return body.map(line=>truncateToWidth(line,width));
-  const inside=width-2;const border=(text:string)=>this.theme.fg('borderMuted',text);
-  return [border('┌'+'─'.repeat(inside)+'┐'),...body.map(line=>border('│')+truncateToWidth(line,inside,'…',true)+border('│')),border('└'+'─'.repeat(inside)+'┘')];
+  const inside=Math.max(1,width-2);const contentWidth=Math.max(1,inside-MENU_PADDING_X*2);const pad=' '.repeat(MENU_PADDING_X);const border=(text:string)=>this.theme.fg('borderMuted',text);
+  return [border('┌'+'─'.repeat(inside)+'┐'),...body.map(line=>border('│')+pad+truncateToWidth(line,contentWidth,'…',true)+pad+border('│')),border('└'+'─'.repeat(inside)+'┘')];
  }
  openMenu():void {
   if(!this.isMounted()){this.notifyUnavailable();return;}
   if(this.menu||this.tui.hasOverlay())return;
-  this.menuId=this.selectedId??this.snapshot.replies.at(-1)?.id;
+  this.filter='';this.filterMode=false;this.menuId=this.selectedId??this.snapshot.replies.at(-1)?.id;
   const close=()=>{this.menu?.hide();this.menu=undefined;};
   const move=(change:number)=>{
-   const rows=[...this.snapshot.replies].reverse();const current=Math.max(0,rows.findIndex(reply=>reply.id===this.menuId));
+   const rows=this.menuRows();const current=Math.max(0,rows.findIndex(reply=>reply.id===this.menuId));
    this.menuId=rows[Math.max(0,Math.min(rows.length-1,current+change))]?.id;this.tui.requestRender();
   };
   let renderedIds:string[]=[];
   const component:Component={invalidate(){},render:width=>{
-   const rows=[...this.snapshot.replies].reverse();const count=Math.max(1,Math.min(MENU_ITEMS_MAX,Math.floor((this.tui.terminal.rows-7)/2)));
+   const rows=this.menuRows();const count=Math.max(1,Math.min(MENU_ITEMS_MAX,this.tui.terminal.rows-9));
    const current=Math.max(0,rows.findIndex(reply=>reply.id===this.menuId));const start=Math.max(0,Math.min(current-Math.floor(count/2),rows.length-count));
    const selected=rows.slice(start,start+count);renderedIds=selected.map(reply=>reply.id);
-   const body=[this.theme.fg('accent',` Replies · ${rows.length}${this.snapshot.limited?' · limited':''}`),''];
-   for(const reply of selected){body.push(this.theme.fg(reply.id===this.menuId?'accent':'text',`${reply.id===this.menuId?'›':' '} ${summary(reply.text)}`),this.theme.fg('dim',`  ${reply.archived?'saved · ':''}${summary(reply.question)}`));}
-   if(!selected.length)body.push(' No completed parent replies yet.');
-   body.push('',this.theme.fg('muted',' ↑↓ browse · Enter jump · Esc close'));return this.frame(body,width);
+   const body=[this.theme.fg('accent',' Replies'),''];
+   for(const reply of selected){body.push(this.theme.fg(reply.id===this.menuId?'accent':'text',`${reply.id===this.menuId?'›':' '} ${reply.role==='user'?'user':'agent'} · ${summary(reply.text)}`));}
+   if(!selected.length)body.push(this.filter?' No user or agent message matches.':' No user or agent messages yet.');
+   if(this.filterMode||this.filter)body.push(this.theme.fg('muted',` Filter: ${this.filter}${this.filterMode?'▌':''}`));
+   body.push('',this.theme.fg('muted',this.filterMode?' Type to filter · Enter jump · Esc clear':' / filter · ↑↓ browse · Enter jump · Esc close'));return this.frame(body,width);
   },handleInput:input=>{
+   if(this.filterMode){
+    if(matchesKey(input,'escape')){this.filter='';this.filterMode=false;this.menuId=this.snapshot.replies.at(-1)?.id;this.tui.requestRender();return;}
+    if(matchesKey(input,'backspace')){this.filter=this.filter.slice(0,-1);this.menuId=this.menuRows().at(-1)?.id;this.tui.requestRender();return;}
+    if(matchesKey(input,'return')&&this.menuId){const id=this.menuId;close();this.jump(id);return;}
+    if(typeof input==='string'&&input.length===1&&input>=' '&&input!=='\x7f'){this.filter+=input;this.menuId=this.menuRows().at(-1)?.id;this.tui.requestRender();return;}
+    return;
+   }
+   if(input==='/'||input==='f'){this.filterMode=true;this.tui.requestRender();return;}
    if(matchesKey(input,'escape')||input==='q'){close();return;}
    if(matchesKey(input,'up'))move(-1);else if(matchesKey(input,'down'))move(1);
    else if(matchesKey(input,'pageUp'))move(-MENU_ITEMS_MAX);else if(matchesKey(input,'pageDown'))move(MENU_ITEMS_MAX);
-   else if(matchesKey(input,'home')){this.menuId=this.snapshot.replies.at(-1)?.id;this.tui.requestRender();}
-   else if(matchesKey(input,'end')){this.menuId=this.snapshot.replies[0]?.id;this.tui.requestRender();}
+   else if(matchesKey(input,'home')){this.menuId=this.menuRows()[0]?.id;this.tui.requestRender();}
+   else if(matchesKey(input,'end')){this.menuId=this.menuRows().at(-1)?.id;this.tui.requestRender();}
    else if(matchesKey(input,'return')&&this.menuId){const id=this.menuId;close();this.jump(id);}
   },handleMouse:event=>{
    if(event.type==='wheel'){move(event.wheelDelta??0);return {handled:true};}
    if(event.type==='press')return {handled:true};
    if(event.type==='click'&&event.button==='left'){
-    const index=Math.floor((event.y-3)/2);const id=event.y>=3?renderedIds[index]:undefined;
+    const bounds=this.menu?.getBounds();const localY=bounds&&event.y>=bounds.row?event.y-bounds.row:event.y;const index=localY-3;const id=index>=0?renderedIds[index]:undefined;
     if(id){close();this.jump(id);}return {handled:true};
    }
   }};
-  this.menu=this.tui.showOverlay(component,{anchor:'top-right',row:1,width:Math.min(58,Math.max(20,this.tui.terminal.columns)),maxHeight:'90%',margin:0});
+  this.menu=this.tui.showOverlay(component,{anchor:'center',width:Math.min(84,Math.max(30,Math.floor(this.tui.terminal.columns*0.7))),maxHeight:'90%',margin:0});
  }
  private locateNative(reply:Reply):number|undefined {
-  const width=this.width();const pending=[{component:this.originalDocument,row:this.savedHeight(),depth:0}];
+  const width=this.width();if(width!==this.nativeWidth){this.nativeWidth=width;this.nativeRows.clear();}
+  const cached=this.nativeRows.get(reply.id);if(cached!==undefined)return cached;
+  const pending=[{component:this.originalDocument,row:this.savedHeight(),depth:0}];
   let nodes=0;let renderedRows=0;const seen=new Set();
   if(this.snapshot.replies.filter(item=>!item.archived&&item.message===reply.message).length!==1)return undefined;
   let found:{component:any;row:number}|undefined;
@@ -178,7 +202,8 @@ export class ReplyNavigator {
    const item=pending.pop()!;const component:any=item.component;
    if(++nodes>LIMITS.layoutNodesMax||item.depth>LIMITS.layoutDepthMax||seen.has(component))return undefined;
    seen.add(component);
-   if(component?.lastMessage===reply.message&&component.isStreaming!==true){if(found)return undefined;found={component,row:item.row};}
+   const matches=reply.role==='user'?component?.constructor?.name==='UserMessageComponent'&&component.messageId===reply.id:component?.lastMessage===reply.message&&component.isStreaming!==true;
+   if(matches){if(found)return undefined;found={component,row:item.row};}
    if(component?.constructor?.name!=='Container'||!Array.isArray(component.children))continue;
    if(component.children.length+pending.length>LIMITS.layoutNodesMax)return undefined;
    const rows=component.render(width);renderedRows+=rows.length;
@@ -192,13 +217,15 @@ export class ReplyNavigator {
    if(offset!==rows.length)return undefined;
    for(let index=children.length-1;index>=0;index-=1)pending.push(children[index]);
   }
-  return found?nativeBodyRow(found.component,found.row,width):undefined;
+  const row=found?(reply.role==='user'?found.row:nativeBodyRow(found.component,found.row,width)):undefined;
+  if(row!==undefined)this.nativeRows.set(reply.id,row);
+  return row;
  }
  jump(id:string):boolean {
   if(this.disposed)return false;
   try {if(!this.beforeJump())return false;}catch{this.fail('Reply history could not be validated before navigation.');return false;}
   if(!this.isMounted()){this.notifyUnavailable();return false;}
-  const reply=this.snapshot.replies.find(item=>item.id===id);if(!reply){this.fail('That parent reply is no longer on this branch.');return false;}
+  const reply=this.snapshot.replies.find(item=>item.id===id);if(!reply){this.fail('That prompt or reply is no longer on this branch.');return false;}
   try {
    this.tui.renderNow();let row=this.savedRows.get(id);
    if(row===undefined)row=this.locateNative(reply);
@@ -206,7 +233,7 @@ export class ReplyNavigator {
     // A renderer wrapper or edited message must never make a text guess jump to the wrong reply.
     this.promotedId=id;this.archiveLines=undefined;this.savedHeight();this.tui.renderNow();row=this.savedRows.get(id);
    }
-   if(row===undefined){this.fail('This reply exceeds the safe display limit.');return false;}
+   if(row===undefined){this.fail('This item exceeds the safe display limit.');return false;}
    this.selectedId=id;
    this.view.scrollTo(row,{disableFollow:true});this.tui.requestRender();return true;
   } catch {this.fail('Reply navigation unavailable; conversation state was not changed.');return false;}
@@ -220,6 +247,6 @@ export class ReplyNavigator {
    if(this.combined&&this.view?.child===this.combined){this.view.child=this.originalDocument;this.view.children[0]=this.originalDocument;}
    this.tui?.requestRender();
   }catch{this.fail('Reply layout cleanup failed; reload the parent session before further navigation.');}
-  this.savedCache.clear();this.savedRows.clear();this.archiveLines=undefined;this.snapshot={replies:[],limited:false};
+  this.savedCache.clear();this.savedRows.clear();this.nativeRows.clear();this.searchText.clear();this.searchTextSignature='';this.archiveLines=undefined;this.snapshot={replies:[],limited:false};
  }
 }
