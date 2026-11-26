@@ -336,6 +336,66 @@ export function cloakText(rawText: string, rawPath: string, cwd: string, state: 
   return changed ? cloakedLines.join(newline) : rawText;
 }
 
+// Bounds keep command parsing linear on pathological input.
+const COMMAND_TOKEN_MAX = 64;
+const PATH_CANDIDATE_MAX = 16;
+
+function stripShellQuotes(token: string): string {
+  if (token.length >= 2) {
+    const first = token[0];
+    const last = token[token.length - 1];
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      return token.slice(1, -1);
+    }
+  }
+
+  return token;
+}
+
+/**
+ * Paths a shell command names: `cat .env`, `sed -n p .env.local`, `git show HEAD:.env`.
+ * Rules still decide whether a candidate is protected, so unresolved tokens are harmless.
+ */
+export function commandPathCandidates(command: string): string[] {
+  const candidates: string[] = [];
+
+  for (const rawToken of command.split(/[\s;&|()<>]+/).slice(0, COMMAND_TOKEN_MAX)) {
+    const token = stripShellQuotes(rawToken);
+    if (!token || token.startsWith("-")) continue;
+
+    const path = token.includes(":") ? token.slice(token.lastIndexOf(":") + 1) : token;
+    if (!path) continue;
+
+    candidates.push(path);
+    if (candidates.length >= PATH_CANDIDATE_MAX) break;
+  }
+
+  return Array.from(new Set(candidates));
+}
+
+/** Ripgrep prints `path:line:content`; cloak only the content so filenames stay readable. */
+export function cloakGrepText(rawText: string, cwd: string, state: RuntimeState): string {
+  if (!state.config.enabled) return rawText;
+
+  const newline = rawText.includes("\r\n") ? "\r\n" : "\n";
+  let changed = false;
+
+  const cloakedLines = rawText.split(/\r?\n/).map((line) => {
+    const separator = line.indexOf(":");
+    if (separator <= 0) return line;
+
+    const path = line.slice(0, separator);
+    const remainder = line.slice(separator + 1);
+    const cloakedRemainder = cloakText(remainder, path, cwd, state);
+    if (cloakedRemainder === remainder) return line;
+
+    changed = true;
+    return `${path}:${cloakedRemainder}`;
+  });
+
+  return changed ? cloakedLines.join(newline) : rawText;
+}
+
 export default function (pi: ExtensionAPI) {
   let state = loadState();
 
@@ -365,11 +425,24 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("tool_result", async (event, ctx) => {
-    if (event.toolName !== "read") return undefined;
     if (!state.config.enabled) return undefined;
 
-    const rawPath = typeof event.input?.path === "string" ? event.input.path : "";
-    if (!rawPath) return undefined;
+    let cloakPart: (text: string) => string;
+
+    if (event.toolName === "read") {
+      const rawPath = typeof event.input?.path === "string" ? event.input.path : "";
+      if (!rawPath) return undefined;
+      cloakPart = (text) => cloakText(text, rawPath, ctx.cwd, state);
+    } else if (event.toolName === "bash") {
+      const command = typeof event.input?.command === "string" ? event.input.command : "";
+      const paths = commandPathCandidates(command);
+      if (paths.length === 0) return undefined;
+      cloakPart = (text) => paths.reduce((current, path) => cloakText(current, path, ctx.cwd, state), text);
+    } else if (event.toolName === "grep") {
+      cloakPart = (text) => cloakGrepText(text, ctx.cwd, state);
+    } else {
+      return undefined;
+    }
 
     let changed = false;
     const content = event.content.map((part) => {
@@ -377,7 +450,7 @@ export default function (pi: ExtensionAPI) {
         return part;
       }
 
-      const cloakedText = cloakText(part.text, rawPath, ctx.cwd, state);
+      const cloakedText = cloakPart(part.text);
       if (cloakedText === part.text) {
         return part;
       }

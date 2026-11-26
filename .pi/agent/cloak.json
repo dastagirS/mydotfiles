@@ -1,0 +1,130 @@
+{
+  "enabled": true,
+  "cloakCharacter": "*",
+  "cloakLength": null,
+  "tryAllPatterns": true,
+  "patterns": [
+    {
+      "filePattern": "**/*.env*",
+      "cloakPattern": "(=).+",
+      "replace": "$1"
+    },
+    {
+      "filePattern": "**/*.envrc",
+      "cloakPattern": "(export\\s+\\w+\\s*=\\s*).+",
+      "replace": "$1"
+    },
+    {
+      "filePattern": "**/.dev.vars",
+      "cloakPattern": "(=).+",
+      "replace": "$1"
+    },
+    {
+      "filePattern": "**/secrets/**",
+      "cloakPattern": [
+        {
+          "pattern": ".*",
+          "replace": "[redacted]"
+        }
+      ]
+    },
+    {
+      "filePattern": [
+        "**/*.pem",
+        "**/*.key"
+      ],
+      "cloakPattern": [
+        {
+          "pattern": "-----BEGIN\\s*(?:RSA\\s*PRIVATE|EC\\s*PRIVATE|PRIVATE|OPENSSH)\\s*KEY-----[\\s\\S]*?-----END\\s*(?:RSA\\s*PRIVATE|EC\\s*PRIVATE|PRIVATE|OPENSSH)\\s*KEY-----",
+          "replace": "-----BEGIN KEY-----***-----END KEY-----"
+        }
+      ]
+    },
+    {
+      "filePattern": [
+        "**/.aws/**",
+        "**/aws-config*/**"
+      ],
+      "cloakPattern": [
+        {
+          "pattern": "(aws_access_key_id\\s*=\\s*).+",
+          "replace": "$1"
+        },
+        {
+          "pattern": "(aws_secret_access_key\\s*=\\s*).+",
+          "replace": "$1"
+        },
+        {
+          "pattern": "(aws_session_token\\s*=\\s*).+",
+          "replace": "$1"
+        }
+      ]
+    },
+    {
+      "filePattern": "**/.ssh/**",
+      "cloakPattern": [
+        {
+          "pattern": "((?:ssh-rsa|ssh-ed25519|ecdsa-sha2-nistp256|ssh-dss)\\s+)[A-Za-z0-9+/=]+",
+          "replace": "$1"
+        },
+        {
+          "pattern": "(-----BEGIN\\s*OPENSSH\\s*PRIVATE\\s*KEY-----)[\\s\\S]*?(-----END\\s*OPENSSH\\s*PRIVATE\\s*KEY-----)",
+          "replace": "$1***$2"
+        }
+      ]
+    },
+    {
+      "filePattern": [
+        "**/*.json",
+        "**/*.jsonc",
+        "**/*.toml",
+        "**/*.yaml",
+        "**/*.yml"
+      ],
+      "cloakPattern": [
+        {
+          "pattern": "(\\\"(?:api[Kk]ey|api_key|API_KEY|apikey|secret|password|token|accessToken|refreshToken|clientSecret|client_id|client_secret|sessionToken|authorization|auth_token|private_key)\\\"\\s*:\\s*\\\")[^\\\"]+",
+          "replace": "$1"
+        },
+        {
+          "pattern": "(\\\"(?:api[Kk]ey|api_key|API_KEY|apikey|secret|password|token|accessToken|refreshToken|clientSecret|client_id|client_secret|sessionToken|authorization|auth_token|private_key)\\\"\\s*:\\s*\\\")[^\\\"]+",
+          "replace": "$1"
+        }
+      ]
+    },
+    {
+      "filePattern": [
+        "~/.pi/agent/auth.json",
+        "**/.pi/agent/auth.json",
+        "**/auth.json"
+      ],
+      "cloakPattern": [
+        {
+          "pattern": "(\\\"(?:token|access|refresh|accessToken|refreshToken|apiKey|secret|password|clientSecret|idToken|sessionToken|authorization)\\\"\\s*:\\s*\\\")[^\\\"]+",
+          "replace": "$1"
+        }
+      ]
+    },
+    {
+      "filePattern": [
+        "**/opencode.json",
+        "**/opencode.jsonc"
+      ],
+      "cloakPattern": [
+        {
+          "pattern": "(\\\"apiKey\\\"\\s*:\\s*\\\")[^\\\"]+",
+          "replace": "$1"
+        }
+      ]
+    },
+    {
+      "filePattern": "**/config.toml",
+      "cloakPattern": [
+        {
+          "pattern": "(token\\s*=\\s*).+",
+          "replace": "$1"
+        }
+      ]
+    }
+  ]
+}

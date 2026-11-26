@@ -61,6 +61,7 @@
 /.pi/agent/*
 !/.pi/agent/AGENTS.md
 !/.pi/agent/SYSTEM.md
+!/.pi/agent/cloak.json
 !/.pi/agent/extensions/
 !/.pi/agent/prompts/
 !/.pi/agent/skills/
