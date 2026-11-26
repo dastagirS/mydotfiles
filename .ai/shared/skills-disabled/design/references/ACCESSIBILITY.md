@@ -4,14 +4,14 @@ Read this at step 4 and step 5. Accessibility is not a final pass; it is a set o
 
 ## The checks that fail most often
 
-Check 7 owns the contrast bar and the roles; it is repeated below only because an accessibility pass is read as one list, and stopping to cross-reference three files is how a pass gets skipped.
+Checks 7 and 10 own the contrast bar and the focus ring; their values appear below only because an accessibility pass is read as one list, and stopping to cross-reference three files is how a pass gets skipped.
 
 | Area | Bar |
 |---|---|
-| Contrast | Body text 4.5:1; large text and UI edges 3:1; disabled controls exempt |
+| Contrast | Body text 4.5:1; large text and UI edges 3:1; disabled controls exempt (check 7) |
 | Colour | Colour is never the only carrier of meaning |
 | Keyboard | Everything interactive is reachable and operable without a mouse |
-| Focus | Visible indicator on every interactive element; `outline: none` without a replacement is a defect |
+| Focus | A visible ring on every interactive element; `outline: none` without a replacement fails (check 10) |
 | Targets | 24×24 CSS px minimum, 44×44 on touch surfaces |
 | Labels | Every input has a visible label, not just a placeholder |
 | Errors | Each error names the field, says what is wrong, and how to fix it |
@@ -40,6 +40,6 @@ One `h1`, headings in order, landmarks (`nav`, `main`, `article`, `aside`, `sect
 
 ## Reduced motion
 
-Under `prefers-reduced-motion: reduce`, drop travel, scale and stagger; keep at most a brief opacity change, and make sure content stays visible with motion off. Script-driven animation is included: a CSS media query does not cover a canvas.
+Check 9 owns the CSS half. What it cannot cover is script-driven motion: a media query does nothing for a canvas, a WebGL field or a `requestAnimationFrame` loop, so each of those needs its own guard, and it must render a still or a reduced variant when the preference is set. Content stays visible with motion off either way.
 
 Done when keyboard alone can complete the surface's one job, and the audit plus one manual tab-through agree.

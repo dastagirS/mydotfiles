@@ -40,6 +40,6 @@ A card, row, panel or toolbar needs to read as distinct. There are three ways �
 - Elevation is a small named scale as tokens, not a shadow invented per component.
 - Cards carry a 1px border as well as a soft shadow on light grounds; heavy black shadows read as dated.
 - On dark grounds, a border or an adjusted lighter fill separates better than a shadow.
-- Radius is one family: inner radius = outer radius − gap, applied only when the result is above 2.
+- Radius is one family. Check 6 gives the inner-radius formula; what it leaves open is which gaps it applies to — concentric shapes only, not every nested pair.
 
 Done when you can name the primary element of each section, the one separation means used, and the grouping that makes the structure readable without any borders at all.

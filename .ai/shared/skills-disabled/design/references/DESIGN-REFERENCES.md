@@ -1,12 +1,15 @@
 # Design references
 
-Read this before Step 2 in [`../SKILL.md`](../SKILL.md). It defines what counts as a reference artifact, where to find candidates, how to inspect each form, and the evidence bar.
+Read this before step 1 in [`../SKILL.md`](../SKILL.md). It defines the two corpora, what counts as a reference artifact, how the shortlist and the extraction work, and the evidence bar.
 
 ## Contents
 
 - Browser gate
-- Research budget
-- Candidate ledger
+- The two corpora
+- The shortlist
+- The extraction
+- The query sweep
+- The ledger
 - Failure transitions
 - The library, through the design MCP
 - Reference directories, not references
@@ -27,28 +30,68 @@ Before the first candidate, establish whether this session can drive a browser. 
 
 **When you have none**, stop and ask the user, in one line: may I drive the browser installed on this machine, in an isolated session, to inspect candidates for this task? Then wait for the answer.
 
-- Approved: carry on with the research budget below.
+- Approved: carry on to [the two corpora](#the-two-corpora).
 - Declined: ask which alternative they want — they inspect and describe a candidate themselves, they supply screenshots, or they waive the research stage.
 
 Only the user can waive research. Record the waiver in one line in the ledger. Direct fetching is not a substitute for inspecting a rendered page: a scroll, a hover and a resize are the evidence, and `curl` produces none of them.
 
-## Research budget
+## The two corpora
 
-A budget is a floor and a ceiling. It prevents both an early return and unbounded browsing.
+There are two places to look, and the loop uses both.
 
-| Control | Value |
+1. **The library, through the design MCP** — components and captures already found, source included. When the server is configured, search it first for every query.
+2. **The directories** — the galleries, section libraries and design systems listed below. They are discovery: a gallery page is never an artifact, only the way to one.
+
+A sweep means: run the queries against the library, then open the directories with the same queries, then open the individual candidates. Skipping either corpus is a short sweep, and a short sweep produces the average of whatever the first three results happened to be.
+
+There is no cap on opens. The stopping condition is the user's answer at a gate, or [the evidence bar](#evidence-bar) with nothing left that is different from what you already hold. A count of opens is not a stop condition, and "I hit the limit" is never a reason to return a thin result.
+
+## The shortlist
+
+Step 1 returns **at least ten** candidates, and they must be different from each other.
+
+**Ten is the floor, not the ceiling.** Fifteen that differ from each other is a better shortlist than ten that do not; the count is a minimum to clear, never a quota to fill. Stop adding when new candidates stop being different from what is already on the list, not when the count reaches ten.
+
+- If two candidates would look the same in a screenshot, one of them is not a candidate. Replace it. Ten variants of one idea is one candidate.
+- Show a still for each, all at 1440 wide, in a layout where they can be compared.
+- One line each, same shape every time: `name · URL · what the page does · which part of it answers the genre`.
+- Include the range: a couple that are obviously the genre, a couple that are adjacent, one or two that are a deliberate stretch. A shortlist of ten safe picks is one safe pick.
+
+Then ask which ones match what the user has in mind, with the numbers visible. The answer is the gate; do not build before it.
+
+The shortlist is also how a genre gets tested. If the user's genre ("kinetic type") produces ten candidates that all look like the same site, the genre is broader or narrower than they meant, and that is the moment to say so.
+
+## The extraction
+
+A pick becomes a system you can rebuild from. Write the table from `SKILL.md` step 2, and fill it with measured values:
+
+| Row | Measure it from |
 |---|---|
-| Accepted artifacts | See [Evidence bar](#evidence-bar): 3 page/site, 2 section/component, 1 tweak |
-| Candidate opens | 8 |
-| Query variants | Up to 3 per directory |
-| Consecutive blocks | 2 before changing directory or query |
-| Directory limit | Up to 2, for discovery only |
-| Stop | Accepted bar met, or 8 candidate opens |
-| Below bar at the cap | Ask the user; do not silently return |
+| Type | computed styles, the stylesheet, the rendered widths at two viewports |
+| Colour | computed colours, count the distinct ones, note where contrast lives |
+| Motion | `video()` frames, or the transition and animation declarations in the source |
+| Layout | the grid declaration, the container width, how sections separate, what repeats |
+| Assets | image formats and sizes, 3D or WebGL presence, texture and illustration, or none |
+| Interaction | the control the visitor uses, and what it changes |
+| Voice | the copy itself, one sentence on its register |
 
-Build a queue with two candidates per required artifact before inspecting: 6–8 for a page, 4–6 for a section, 2–3 for a tweak. A blocked, rejected or unusable candidate consumes one open. Accepted artifacts are the only count that meets the bar. Directories are discovery, not a checklist; do not open every gallery to fill the queue.
+Three rules:
 
-## Candidate ledger
+- A value, never an adjective. "Serif display at `clamp(96px, 14vw, 220px)`, upright, tracking 0" is a value; "elegant typography" is not.
+- Mark inferences as inferences. If a row cannot be measured because the site blocks inspection, say which row and why.
+- The extraction is the input to step 3, so it has to be specific enough to search with. An inventory that cannot produce a query word has not extracted anything.
+
+## The query sweep
+
+Step 3 re-runs the search with terms taken from the extraction's distinctive rows.
+
+- Derive three to six terms, from the rows that are unusual, never from the rows that are universal. "Rounded corners" is on every site; "hairline rules and no radius" is a query.
+- Run each term against both corpora. The library takes the term directly; the directories take it through their own search or a site-restricted search engine query.
+- Record every candidate in [the ledger](#the-ledger), including the ones you expected to work and did not.
+- A term that returns only what you already accepted is a dead term: change it, do not keep collecting duplicates.
+- Stop at [the evidence bar](#evidence-bar) — three accepted artifacts for a page — taken from the chosen style's family, plus one deliberate contrast from outside it.
+
+## The ledger
 
 Keep one task-scoped ledger. Use `/tmp` if the harness cannot hold it, and remove it when the task ends.
 
@@ -67,13 +110,12 @@ One line per candidate. The ledger is the state the report is checked against.
 
 ## Failure transitions
 
-- **Blocked:** record it, open the next candidate. A block never ends research.
-- **Two consecutive blocks:** change directory or query. Retry only with a new query.
-- **Three queries with no candidate:** change directory.
-- **No candidates after the directory limit:** ask the user; do not silently return.
+- **Blocked:** record it and open another source with the same query. **A blocked source is routed around, never a stop**: a block never ends research.
+- **Two consecutive blocks:** change corpus, directory or query. Retry only with a new query.
+- **A directory that bot-checks the browser:** try the archive copy, a search engine's cache, or the same genre in another directory. Cloudflare interstitials are common on exactly the galleries worth reading.
+- **The user says none of the ten fit:** go back to step 0 and re-ask the genre. Do not widen the shortlist into the same ten pages.
 - **Accepted bar met:** stop; do not keep browsing.
-- **Eight opens and below the bar:** stop and ask the user. Report accepted, rejected, blocked and unexamined candidates separately.
-- **Never:** report done with accepted below the bar unless the user explicitly waives research.
+- **Never:** report done below the bar. Only the user waives research, in one line.
 
 ## The library, through the design MCP
 
@@ -186,7 +228,7 @@ The galleries and section libraries follow.
 - [OKAY DEV](https://okaydev.co) — community of creative web developers
 - [Save.design](https://save.design) — organise the inspiration you collect
 
-Use these directories to find individual artifacts, not to browse covers. Search the term for the thing being built, plus the requested tone. If the design MCP is configured, start there; otherwise start with 21st.dev. If needed, use at most two directories before inspecting candidates. That limit applies to discovery, not to the number of artifacts. `collectui.com` and `tympanus.net` were dropped from this list: the first has no DNS record, the second no longer serves Codrops.
+Use these directories to find individual artifacts, not to browse covers. Start with the library when the MCP is configured, then 21st.dev, then the galleries that match the genre. There is no directory cap: leave a directory when it stops producing candidates you could not already find, not after a count of visits. What limits the sweep is the shortlist's demand for ten candidates that differ from each other. `collectui.com` and `tympanus.net` were dropped from this list: the first has no DNS record, the second no longer serves Codrops.
 
 ## Design systems
 
@@ -297,3 +339,12 @@ Five techniques worth knowing are possible in a single canvas: paper with fibre 
 - Borrow principles and mechanics, never identity: no logos, body copy, personal data or proprietary assets.
 - Report only what was actually inspected. A blocked or unvisited page stays labelled as such.
 - Keep task owned scratch files in `/tmp`, and remove them when the task ends.
+
+## Done when
+
+Both corpora were swept with the same derived terms; the shortlist holds ten or
+more candidates that differ from each other, each with a still and a one-line
+note; the extraction table is filled with measured values; every candidate in the
+ledger has a status; and the accepted count meets the [evidence bar](#evidence-bar)
+with one deliberate contrast beside it. Blocked and rejected candidates are
+reported as such, not silently dropped.

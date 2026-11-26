@@ -6,6 +6,7 @@ import unittest
 
 CONFIGURATION_ROOT = Path(__file__).resolve().parent
 DIRECTORY_COUNT_MAX = 64
+DESIGN_SKILL = CONFIGURATION_ROOT / "shared/skills-disabled/design"
 SPECIFICATION = importlib.util.spec_from_file_location("shared_setup_build", CONFIGURATION_ROOT / "build.py")
 BUILD = importlib.util.module_from_spec(SPECIFICATION)
 SPECIFICATION.loader.exec_module(BUILD)
@@ -65,7 +66,8 @@ class SharedSetupTests(unittest.TestCase):
             self.assertFalse((root / "agent-browser").is_symlink())
 
     def test_design_skill_files_are_current(self):
-        skill = CONFIGURATION_ROOT / "shared/skills/design"
+        skill = DESIGN_SKILL
+        self.assertFalse((CONFIGURATION_ROOT / "shared/skills/design").exists())
         for relative in [
             "SKILL.md",
             "references/DESIGN-REFERENCES.md",
@@ -79,9 +81,11 @@ class SharedSetupTests(unittest.TestCase):
         self.assertFalse((skill / "references/web-inspiration.md").exists())
         self.assertFalse((skill / "references/dashboard").exists())
         self.assertFalse((skill / "assets").exists())
+        for client in [Path.home() / ".pi/agent/skills", Path.home() / ".config/opencode/skills"]:
+            self.assertFalse((client / "design").is_symlink())
 
     def test_design_reference_links_resolve(self):
-        skill = CONFIGURATION_ROOT / "shared/skills/design"
+        skill = DESIGN_SKILL
         for document in [skill / "SKILL.md", skill / "SOURCES.md", *sorted((skill / "references").glob("*.md"))]:
             for target in re.findall(r"\]\(([^)]+)\)", document.read_text()):
                 if target.startswith(("http://", "https://")):
@@ -93,7 +97,7 @@ class SharedSetupTests(unittest.TestCase):
                     self.assertTrue((document.parent / path).resolve().exists())
 
     def test_design_research_requires_artifacts_and_browser(self):
-        skill = CONFIGURATION_ROOT / "shared/skills/design"
+        skill = DESIGN_SKILL
         main = (skill / "SKILL.md").read_text()
         references = (skill / "references/DESIGN-REFERENCES.md").read_text()
         self.assertIn("A reference artifact is one individual thing", references)
@@ -115,15 +119,32 @@ class SharedSetupTests(unittest.TestCase):
         for name in ("SURFACES", "COMPOSITION", "COMPONENTS", "COLOUR-AND-TYPE", "ACCESSIBILITY", "PERFORMANCE"):
             self.assertIn(f"references/{name}.md](references/{name}.md)", main)
             self.assertTrue((skill / f"references/{name}.md").is_file())
-        self.assertIn("**A live HTML preview** of the actual design.", main)
-        self.assertIn("A tweak to an existing surface runs steps 2 and 5 only", main)
-        self.assertIn("when researching design references", main)
-        self.assertIn("candidate queue", main)
-        self.assertIn("**Do not return after one blocked candidate.**", main)
-        self.assertIn("## Research budget", references)
-        self.assertIn("| Candidate opens | 8 |", references)
-        self.assertIn("**Blocked:** record it, open the next candidate.", references)
-        self.assertIn("Never:** report done with accepted below the bar", references)
+        # The loop's gates, in order, and the ten-candidate floor.
+        for step in ["### 0 · Ask for the genre", "### 1 · Shortlist at least ten, and ask which",
+                     "### 2 · Extract the chosen system", "### 3 · Turn the extraction into queries, and sweep again",
+                     "### 4 · Three previews, and ask which"]:
+            self.assertIn(step, main)
+        self.assertIn("**at least ten**", main)
+        self.assertIn("**At least three**", main)
+        # Ten is a floor, not a quota: more is welcome while each differs.
+        self.assertIn("**Ten is the minimum, not the maximum", main)
+        self.assertIn("A tweak to an existing surface runs step 3 and step 5", main)
+        # The description is the trigger, so it states what the skill does and
+        # the contexts, in the pushier form the authoring rules ask for.
+        self.assertIn("Use this whenever the work involves how something looks or feels", main)
+        self.assertIn("finding and shortlisting design references", main)
+        self.assertIn("**A blocked source is routed around, never a stop.**", main)
+        self.assertIn("A blocked source is routed around, never a stop", references)
+        # The loop replaced the research budget: a fixed open count was what
+        # produced thin sweeps and ten variants of one idea.
+        self.assertIn("## The two corpora", references)
+        self.assertIn("## The shortlist", references)
+        self.assertIn("## The extraction", references)
+        self.assertIn("## The query sweep", references)
+        self.assertNotIn("Candidate opens", references)
+        self.assertIn("## The ledger", references)
+        self.assertIn("**A blocked source is routed around, never a stop**", references)
+        self.assertIn("**Never:** report done below the bar", references)
 
 
 if __name__ == "__main__":

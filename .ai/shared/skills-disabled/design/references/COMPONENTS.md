@@ -16,7 +16,7 @@ Controls that sit together share a height, radius, horizontal padding and colour
 Check 10 lists the six. What it leaves open is where the other five values come from, and the answer is derivation rather than five hand-picked colours.
 
 - Hover and active come from the base colour by a lightness step.
-- Focus is visible on every interactive element and is never `outline: none`. Keep a transparent outline for forced-colours mode.
+- Focus is visible on every interactive element and is never `outline: none` (check 10). Keep a transparent outline so forced-colours mode still shows a ring.
 - Disabled reads as unavailable: reduced contrast, no hover, `cursor: not-allowed`.
 - Loading disables re-submission and shows progress on the control itself, not via the cursor.
 - `cursor: pointer` at rest on everything interactive.
