@@ -24,9 +24,6 @@ class SharedSetupTests(unittest.TestCase):
                 self.assertTrue((skill / "SKILL.md").is_file())
                 for client in [Path.home() / ".pi/agent/skills", Path.home() / ".config/opencode/skills"]:
                     link = client / skill.name
-                    disabled = client / f"{skill.name}.bak"
-                    if not link.is_symlink() and (disabled.exists() or disabled.is_symlink()):
-                        continue
                     self.assertTrue(link.is_symlink(), f"Missing shared link: {link}")
                     self.assertFalse(link.readlink().is_absolute(), f"Managed link is not portable: {link}")
                     self.assertTrue(link.samefile(skill), f"Client uses a different skill copy: {link}")

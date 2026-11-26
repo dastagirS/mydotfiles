@@ -118,9 +118,6 @@ def plan_links(configuration_root):
         if skill.is_symlink() or not skill.is_dir() or definition.is_symlink() or not definition.is_file():
             raise ValueError(f"Expected a canonical skill with SKILL.md: {skill}")
         for client in [home / ".pi/agent/skills", home / ".config/opencode/skills"]:
-            disabled = client / f"{skill.name}.bak"
-            if disabled.exists() or disabled.is_symlink():
-                continue
             desired.append((client / skill.name, skill))
     changes = []
     for link, source in desired:

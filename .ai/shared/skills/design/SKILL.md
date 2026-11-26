@@ -1,7 +1,8 @@
 ---
 name: design
-description: Visual and interaction design for web UI. Use this whenever the work involves how something looks or feels, even if the user never says "design": building or revamping a page, section, component, dashboard, form, chart or design system; choosing fonts, sizes, spacing, radii, colours, icons, motion or page structure; writing interface copy; finding and shortlisting design references, galleries, screenshots or live sites, or asking which direction to take; or reviewing UI that looks unfinished, generic, templated or off brand.
+description: 'Visual and interaction design for web UI. Use this whenever the work involves how something looks or feels, even if the user never says "design": building or revamping a page, section, component, dashboard, form, chart or design system; choosing fonts, sizes, spacing, radii, colours, icons, motion or page structure; writing interface copy; finding and shortlisting design references, galleries, screenshots or live sites, or asking which direction to take; or reviewing UI that looks unfinished, generic, templated or off brand.'
 license: MIT. Complete terms in LICENSE.
+disable-model-invocation: true
 compatibility: The loop needs network access and a browser you can drive. The scale runs offline.
 ---
 

@@ -46,7 +46,7 @@ Both clients retain their existing skill paths, now symlinked to `shared/skills/
 
 Docket/subagent stay Pi-only. OpenCode's skill directory must match the shared portable Pi collection, with no legacy-only additions. The old ponytail-review/spec-builder/spec-planner skill copies and their matching command wrappers were archived outside discovery. Lumyx was removed from OpenCode's provider configuration. Other client-specific commands, reference prompts, disabled custom agents, permissions, plugins, MCP configuration, packages, credentials and runtime data remain separate.
 
-To add a portable skill, create its complete directory under `shared/skills/`, then run `python3 ~/.ai/build.py --links` to link it into both clients' existing `skills/` folders. To disable a skill on one machine only, rename that client's link to `<name>.bak`; `--links` skips creating the active link and leaves the shared source available to other machines. Use the same directory ID in both clients; OpenCode skill IDs and Pi display names/tool syntax are not interchangeable. Do not put a Pi-specific protocol in shared discovery merely because its Markdown is readable elsewhere.
+To add a portable skill, create its complete directory under `shared/skills/`, then run `python3 ~/.ai/build.py --links` to link it into both clients' existing `skills/` folders. Use the same directory ID in both clients; OpenCode skill IDs and Pi display names/tool syntax are not interchangeable. Do not put a Pi-specific protocol in shared discovery merely because its Markdown is readable elsewhere.
 
 ## Verify
 
