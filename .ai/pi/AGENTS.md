@@ -49,5 +49,5 @@ Personal Pi coding agent configuration. Shared coding and communication rules ar
 - Edit common rules in `~/.ai/shared/AGENTS.md`; portable skills live in `~/.ai/shared/skills/` and are symlinked into both clients.
 - `~/.pi/AGENTS.md` is a symlink to this canonical workspace document, `~/.ai/pi/AGENTS.md`; edits need no rebuild.
 - Run `python3 ~/.ai/build.py` after shared-rule or OpenCode instruction edits; `--check` detects stale generated files without rewriting them. Do not edit generated instruction files directly.
-- Run `python3 ~/.ai/build.py --links` to create or normalize managed relative links and prune links whose shared target was removed; add `--check` to verify without changing generated files or links. Unrelated entries are never replaced.
+- Run `python3 ~/.ai/build.py --links` to create or normalize managed relative links and prune links whose shared target was removed; add `--check` to verify without changing generated files or links. Rename a client link to `<name>.bak` to disable it on one machine; unrelated entries are never replaced.
 - Docket/subagent remain Pi-only. Shared rules already load through Pi's existing `agent/SYSTEM.md`; do not duplicate them in a second global context file.

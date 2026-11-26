@@ -156,6 +156,17 @@ class InstructionBuildTests(unittest.TestCase):
         self.assertEqual(BUILD.plan_links(root), [])
         BUILD.build(root, check=True)
 
+    def test_bak_marker_opts_one_client_out(self):
+        skill = self.add_shared_skill()
+        bak = self.home / ".pi/agent/skills/example.bak"
+        bak.parent.mkdir(parents=True)
+        bak.symlink_to(skill)
+        BUILD.install_links(BUILD.plan_links(self.root))
+        self.assertFalse((self.home / ".pi/agent/skills/example").is_symlink())
+        self.assertTrue((self.home / ".config/opencode/skills/example").samefile(skill))
+        self.assertTrue(bak.is_symlink())
+        self.assertEqual(BUILD.plan_stale_links(self.root), [])
+
     def test_stale_managed_skill_links_are_pruned(self):
         skill = self.add_shared_skill()
         self.add_shared_skill("keep")

@@ -6,7 +6,7 @@ import unittest
 
 CONFIGURATION_ROOT = Path(__file__).resolve().parent
 DIRECTORY_COUNT_MAX = 64
-DESIGN_SKILL = CONFIGURATION_ROOT / "shared/skills-disabled/design"
+DESIGN_SKILL = CONFIGURATION_ROOT / "shared/skills/design"
 SPECIFICATION = importlib.util.spec_from_file_location("shared_setup_build", CONFIGURATION_ROOT / "build.py")
 BUILD = importlib.util.module_from_spec(SPECIFICATION)
 SPECIFICATION.loader.exec_module(BUILD)
@@ -24,6 +24,9 @@ class SharedSetupTests(unittest.TestCase):
                 self.assertTrue((skill / "SKILL.md").is_file())
                 for client in [Path.home() / ".pi/agent/skills", Path.home() / ".config/opencode/skills"]:
                     link = client / skill.name
+                    disabled = client / f"{skill.name}.bak"
+                    if not link.is_symlink() and (disabled.exists() or disabled.is_symlink()):
+                        continue
                     self.assertTrue(link.is_symlink(), f"Missing shared link: {link}")
                     self.assertFalse(link.readlink().is_absolute(), f"Managed link is not portable: {link}")
                     self.assertTrue(link.samefile(skill), f"Client uses a different skill copy: {link}")
@@ -67,7 +70,7 @@ class SharedSetupTests(unittest.TestCase):
 
     def test_design_skill_files_are_current(self):
         skill = DESIGN_SKILL
-        self.assertFalse((CONFIGURATION_ROOT / "shared/skills/design").exists())
+        self.assertTrue((CONFIGURATION_ROOT / "shared/skills/design").is_dir())
         for relative in [
             "SKILL.md",
             "references/DESIGN-REFERENCES.md",
@@ -81,8 +84,6 @@ class SharedSetupTests(unittest.TestCase):
         self.assertFalse((skill / "references/web-inspiration.md").exists())
         self.assertFalse((skill / "references/dashboard").exists())
         self.assertFalse((skill / "assets").exists())
-        for client in [Path.home() / ".pi/agent/skills", Path.home() / ".config/opencode/skills"]:
-            self.assertFalse((client / "design").is_symlink())
 
     def test_design_reference_links_resolve(self):
         skill = DESIGN_SKILL
