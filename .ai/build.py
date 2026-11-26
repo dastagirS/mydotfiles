@@ -134,6 +134,29 @@ def plan_links(configuration_root):
     return changes
 
 
+def plan_stale_links(configuration_root):
+    home = Path.home()
+    shared = configuration_root / "shared/skills"
+    if shared.is_symlink() or not shared.is_dir():
+        raise ValueError(f"Expected a canonical shared skill directory: {shared}")
+    shared_root = shared.resolve()
+    stale = []
+    for client in [home / ".pi/agent/skills", home / ".config/opencode/skills"]:
+        if not client.is_dir() or client.is_symlink():
+            continue
+        entries = list(islice(client.iterdir(), SKILL_COUNT_MAX + 1))
+        if len(entries) > SKILL_COUNT_MAX:
+            raise ValueError(f"Client skill directory exceeds the link limit: {client}")
+        for link in entries:
+            if not link.is_symlink():
+                continue
+            target = link.resolve()
+            if target.parent != shared_root or target.exists():
+                continue
+            stale.append((link, os.readlink(link)))
+    return stale
+
+
 def replace_link(link, target):
     with tempfile.TemporaryDirectory(prefix=".ai-link-", dir=link.parent) as directory:
         temporary = Path(directory) / "link"
@@ -141,13 +164,20 @@ def replace_link(link, target):
         os.replace(temporary, link)
 
 
-def install_links(changes, check=False):
+def install_links(changes, check=False, removals=()):
     if check:
-        if changes:
-            raise ValueError("Managed links are missing or not relative: " + ", ".join(str(change[0]) for change in changes))
+        if changes or removals:
+            details = [str(change[0]) for change in changes] + [str(removal[0]) for removal in removals]
+            raise ValueError("Managed links are missing, stale, or not relative: " + ", ".join(details))
         return
     replaced = []
+    removed = []
     try:
+        for link, previous in removals:
+            if not link.is_symlink() or os.readlink(link) != previous:
+                raise ValueError(f"Client link changed after stale-link planning: {link}")
+            link.unlink()
+            removed.append((link, previous))
         for link, relative, previous in changes:
             if previous is None:
                 if link.exists() or link.is_symlink():
@@ -165,6 +195,11 @@ def install_links(changes, check=False):
                     link.unlink(missing_ok=True)
                 else:
                     replace_link(link, previous)
+            except OSError:
+                failures.append(str(link))
+        for link, previous in reversed(removed):
+            try:
+                replace_link(link, previous)
             except OSError:
                 failures.append(str(link))
         if failures:
@@ -185,9 +220,10 @@ def main():
             except BlockingIOError as error:
                 raise RuntimeError("Another shared-instruction build is running") from error
             changes = plan_links(CONFIGURATION_ROOT) if arguments.links else []
+            removals = plan_stale_links(CONFIGURATION_ROOT) if arguments.links else []
             build(CONFIGURATION_ROOT, arguments.check)
             if arguments.links:
-                install_links(changes, arguments.check)
+                install_links(changes, arguments.check, removals)
     except (OSError, UnicodeError, ValueError, RuntimeError) as error:
         print(f"Shared instruction build failed: {error}", file=sys.stderr)
         return 1

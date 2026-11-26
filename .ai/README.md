@@ -27,7 +27,7 @@ python3 ~/.ai/build.py --links --check
 
 The script locates its sources beside `build.py` and locates client files using `Path.home()`. Source checkout and home directory need not have the same parent. Generated headers use paths relative to their output file, not a username or absolute source location. For relocation without rebuilding, keep the same relative layout between the sources and client directories.
 
-`--links` manages only the Pi workspace alias and links for directories currently in `shared/skills/`. It refuses real files/directories or symlinks pointing somewhere else. It neither deletes stale entries nor changes unrelated links. Link conflicts are checked before generated files are written. File generation and link installation are separate rollback groups, not one cross-filesystem transaction.
+`--links` manages the Pi workspace alias and links for directories currently in `shared/skills/`. It also prunes managed relative links whose target was a direct child of `shared/skills/` and no longer exists. It refuses real files/directories or symlinks pointing somewhere else, and leaves unrelated links alone. Link conflicts are checked before generated files are written. File generation and link installation are separate rollback groups, not one cross-filesystem transaction.
 
 The builder generates these files; do not edit them directly:
 
@@ -46,7 +46,7 @@ Both clients retain their existing skill paths, now symlinked to `shared/skills/
 
 Docket/subagent stay Pi-only. OpenCode's skill directory must match the shared portable Pi collection, with no legacy-only additions. The old ponytail-review/spec-builder/spec-planner skill copies and their matching command wrappers were archived outside discovery. Lumyx was removed from OpenCode's provider configuration. Other client-specific commands, reference prompts, disabled custom agents, permissions, plugins, MCP configuration, packages, credentials and runtime data remain separate.
 
-To add a portable skill, create its complete directory under `shared/skills/`, then run `python3 ~/.ai/build.py --links` to link it into both clients' existing `skills/` folders. Use the same directory ID in both clients; OpenCode skill IDs and Pi display names/tool syntax are not interchangeable. Do not put a Pi-specific protocol in shared discovery merely because its Markdown is readable elsewhere.
+To add a portable skill, create its complete directory under `shared/skills/`, then run `python3 ~/.ai/build.py --links` to link it into both clients' existing `skills/` folders. To disable one without deleting it, move its directory to `shared/skills-disabled/` and run `--links`; the client links are pruned. Use the same directory ID in both clients; OpenCode skill IDs and Pi display names/tool syntax are not interchangeable. Do not put a Pi-specific protocol in shared discovery merely because its Markdown is readable elsewhere.
 
 ## Verify
 
@@ -55,4 +55,4 @@ python3 -m unittest discover -s ~/.ai -p 'test_*.py' -v
 python3 ~/.ai/build.py --check
 ```
 
-Builder tests use disposable homes and cover composition, read-only checks, shared edits, invalid inputs, target symlinks, idempotence, atomic-write cleanup, write-failure rollback, safe relative link creation, link rollback, an alternate-home CLI run and moving the entire home directory. Setup tests inspect the installed links, generated output, Pi-only exclusions and original dashboard assets. Migration evidence, original hashes/modes and detailed diffs are retained with the initial backup. These checks are not model/provider or universal-client compatibility certification.
+Builder tests use disposable homes and cover composition, read-only checks, shared edits, invalid inputs, target symlinks, idempotence, atomic-write cleanup, write-failure rollback, safe relative link creation, stale-link pruning, link rollback, an alternate-home CLI run and moving the entire home directory. Setup tests inspect the installed links, generated output, Pi-only exclusions and the disabled design source. Migration evidence, original hashes/modes and detailed diffs are retained with the initial backup. These checks are not model/provider or universal-client compatibility certification.

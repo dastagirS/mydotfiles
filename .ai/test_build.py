@@ -136,8 +136,8 @@ class InstructionBuildTests(unittest.TestCase):
                 BUILD.build(self.root)
         self.assertEqual(self.snapshot(), before)
 
-    def add_shared_skill(self):
-        skill = self.root / "shared/skills/example"
+    def add_shared_skill(self, name="example"):
+        skill = self.root / "shared/skills" / name
         skill.mkdir(parents=True)
         (skill / "SKILL.md").write_text("Example skill")
         return skill
@@ -155,6 +155,24 @@ class InstructionBuildTests(unittest.TestCase):
             self.assertTrue(link.samefile(source))
         self.assertEqual(BUILD.plan_links(root), [])
         BUILD.build(root, check=True)
+
+    def test_stale_managed_skill_links_are_pruned(self):
+        skill = self.add_shared_skill()
+        self.add_shared_skill("keep")
+        BUILD.install_links(BUILD.plan_links(self.root))
+        disabled = self.root / "shared/skills-disabled"
+        disabled.mkdir(parents=True)
+        skill.rename(disabled / "example")
+        changes = BUILD.plan_links(self.root)
+        removals = BUILD.plan_stale_links(self.root)
+        self.assertEqual({link.name for link, _ in removals}, {"example"})
+        with self.assertRaisesRegex(ValueError, "stale"):
+            BUILD.install_links(changes, check=True, removals=removals)
+        BUILD.install_links(changes, removals=removals)
+        for client in [self.home / ".pi/agent/skills", self.home / ".config/opencode/skills"]:
+            self.assertFalse((client / "example").is_symlink())
+            self.assertTrue((client / "keep").samefile(self.root / "shared/skills/keep"))
+        self.assertEqual(BUILD.plan_stale_links(self.root), [])
 
     def test_link_check_is_read_only(self):
         self.add_shared_skill()
