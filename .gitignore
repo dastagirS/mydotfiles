@@ -35,6 +35,7 @@
 # ~/.config/nushell (Linux). History, plugins and the generated starship hook
 # stay in $nu.data-dir, outside the repo.
 !/.config/nushell/
+/.config/nushell/env.nu
 
 # Berkeley Mono: allow-list only the installed font file itself, so other
 # font directories (including cloned ones) stay out of the repo.
